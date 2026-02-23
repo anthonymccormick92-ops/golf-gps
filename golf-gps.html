@@ -22,7 +22,6 @@
       --muted: #7aab8a;
       --accent: #95d5b2;
       --red: #e76f51;
-      --radius: 12px;
     }
 
     body {
@@ -33,6 +32,107 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+    }
+
+    /* ── COURSE SEARCH OVERLAY ── */
+    #course-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--sky);
+      z-index: 5000;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      gap: 16px;
+    }
+
+    #course-overlay h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 3px;
+      color: var(--fairway);
+    }
+
+    #course-overlay p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: -8px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    #course-search-input {
+      flex: 1;
+      background: var(--panel2);
+      border: 1px solid rgba(149,213,178,0.2);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      padding: 10px 14px;
+    }
+
+    #course-search-input:focus {
+      outline: none;
+      border-color: var(--fairway);
+    }
+
+    #course-search-input::placeholder { color: var(--muted); }
+
+    #course-results {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .course-result-item {
+      background: var(--panel2);
+      border: 1px solid rgba(149,213,178,0.1);
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .course-result-item:hover, .course-result-item:active {
+      border-color: var(--fairway);
+      background: rgba(82,183,136,0.1);
+    }
+
+    .course-result-item .course-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .course-result-item .course-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .search-status {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      padding: 20px 0;
+    }
+
+    .btn-skip {
+      background: none;
+      border: 1px solid rgba(149,213,178,0.15);
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      cursor: pointer;
+      width: 100%;
     }
 
     /* ── HEADER ── */
@@ -49,9 +149,13 @@
 
     header h1 {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.6rem;
+      font-size: 1.4rem;
       letter-spacing: 3px;
       color: var(--fairway);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 60%;
     }
 
     header .hole-badge {
@@ -63,6 +167,7 @@
       color: var(--green-pale);
       text-transform: uppercase;
       letter-spacing: 1px;
+      white-space: nowrap;
     }
 
     /* ── DISTANCE BAR ── */
@@ -75,46 +180,15 @@
       flex-shrink: 0;
     }
 
-    .dist-item {
-      text-align: center;
-    }
-
-    .dist-label {
-      font-size: 0.6rem;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--muted);
-      margin-bottom: 2px;
-    }
-
-    .dist-value {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.6rem;
-      letter-spacing: 1px;
-      color: var(--accent);
-      line-height: 1;
-    }
-
-    .dist-value.highlight {
-      color: var(--sand);
-      font-size: 2rem;
-    }
-
-    .dist-unit {
-      font-size: 0.6rem;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
+    .dist-item { text-align: center; }
+    .dist-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 2px; }
+    .dist-value { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 1px; color: var(--accent); line-height: 1; }
+    .dist-value.highlight { color: var(--sand); font-size: 2rem; }
+    .dist-unit { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
 
     /* ── MAP ── */
-    #map {
-      flex: 1;
-      min-height: 0;
-    }
-
-    .leaflet-container {
-      background: #1a2e1a;
-    }
+    #map { flex: 1; min-height: 0; }
+    .leaflet-container { background: #1a2e1a; }
 
     /* ── TOOLBAR ── */
     #toolbar {
@@ -139,30 +213,13 @@
       white-space: nowrap;
     }
 
-    .btn-primary {
-      background: var(--green);
-      color: var(--green-pale);
-      padding: 8px 14px;
-    }
+    .btn-primary { background: var(--green); color: var(--green-pale); padding: 8px 14px; }
     .btn-primary:hover { background: var(--green-light); }
     .btn-primary:active { transform: scale(0.97); }
-
-    .btn-secondary {
-      background: rgba(149,213,178,0.1);
-      color: var(--accent);
-      border: 1px solid rgba(149,213,178,0.2);
-      padding: 8px 14px;
-    }
+    .btn-secondary { background: rgba(149,213,178,0.1); color: var(--accent); border: 1px solid rgba(149,213,178,0.2); padding: 8px 14px; }
     .btn-secondary:hover { background: rgba(149,213,178,0.18); }
-
-    .btn-danger {
-      background: rgba(231,111,81,0.15);
-      color: var(--red);
-      border: 1px solid rgba(231,111,81,0.25);
-      padding: 8px 14px;
-    }
+    .btn-danger { background: rgba(231,111,81,0.15); color: var(--red); border: 1px solid rgba(231,111,81,0.25); padding: 8px 14px; }
     .btn-danger:hover { background: rgba(231,111,81,0.25); }
-
     .spacer { flex: 1; }
 
     /* ── SCORECARD PANEL ── */
@@ -193,48 +250,16 @@
       align-items: center;
     }
 
-    #scorecard-panel h2 button {
-      font-size: 1rem;
-      background: none;
-      color: var(--muted);
-      padding: 0 6px;
-    }
+    #scorecard-panel h2 button { font-size: 1rem; background: none; color: var(--muted); padding: 0 6px; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-
-    thead tr {
-      border-bottom: 1px solid rgba(149,213,178,0.2);
-    }
-
-    th {
-      text-align: center;
-      padding: 6px 4px;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    td {
-      text-align: center;
-      padding: 5px 4px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
-
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead tr { border-bottom: 1px solid rgba(149,213,178,0.2); }
+    th { text-align: center; padding: 6px 4px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 500; }
+    td { text-align: center; padding: 5px 4px; border-bottom: 1px solid rgba(255,255,255,0.04); }
     td:first-child { color: var(--muted); font-size: 0.75rem; }
 
-    .score-cell {
-      position: relative;
-    }
-
     .score-cell input {
-      width: 36px;
-      height: 32px;
+      width: 36px; height: 32px;
       background: rgba(149,213,178,0.08);
       border: 1px solid rgba(149,213,178,0.15);
       border-radius: 6px;
@@ -245,16 +270,12 @@
       letter-spacing: 1px;
     }
 
-    .score-cell input:focus {
-      outline: none;
-      border-color: var(--fairway);
-      background: rgba(82,183,136,0.15);
-    }
+    .score-cell input:focus { outline: none; border-color: var(--fairway); background: rgba(82,183,136,0.15); }
 
-    .birdie  { color: #4ade80; }
-    .par     { color: var(--text); }
-    .bogey   { color: var(--sand); }
-    .double  { color: var(--red); }
+    .birdie { color: #4ade80; }
+    .par    { color: var(--text); }
+    .bogey  { color: var(--sand); }
+    .double { color: var(--red); }
 
     #total-row td {
       font-family: 'Bebas Neue', sans-serif;
@@ -265,11 +286,10 @@
       padding-top: 8px;
     }
 
-    /* ── STATUS TOAST ── */
+    /* ── TOAST ── */
     #toast {
       position: fixed;
-      top: 70px;
-      left: 50%;
+      top: 70px; left: 50%;
       transform: translateX(-50%) translateY(-10px);
       background: var(--green);
       color: var(--green-pale);
@@ -283,31 +303,32 @@
       pointer-events: none;
     }
 
-    #toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ── CUSTOM LEAFLET MARKERS ── */
-    .pin-you {
-      width: 16px; height: 16px;
-      background: var(--fairway);
-      border: 3px solid #fff;
-      border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(82,183,136,0.3);
-    }
-    .pin-target {
-      width: 14px; height: 14px;
-      background: var(--sand);
-      border: 2px solid #fff;
-      border-radius: 50%;
-    }
+    /* ── MARKERS ── */
+    .pin-you { width: 16px; height: 16px; background: var(--fairway); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 4px rgba(82,183,136,0.3); }
+    .pin-target { width: 14px; height: 14px; background: var(--sand); border: 2px solid #fff; border-radius: 50%; }
   </style>
 </head>
 <body>
 
-<header>
+<!-- ── COURSE SEARCH OVERLAY ── -->
+<div id="course-overlay">
   <h1>⛳ Golf GPS</h1>
+  <p>Search for your course to load pars automatically</p>
+  <div class="search-row">
+    <input type="text" id="course-search-input" placeholder="e.g. Bristol Golf Club" autocomplete="off"/>
+    <button class="btn-primary" id="btn-search-course">Search</button>
+  </div>
+  <div id="course-results">
+    <div class="search-status">Enter a course name above to search</div>
+  </div>
+  <button class="btn-skip" id="btn-skip-course">Skip — use default pars</button>
+</div>
+
+<!-- ── MAIN APP ── -->
+<header>
+  <h1 id="app-title">⛳ Golf GPS</h1>
   <span class="hole-badge" id="hole-label">Hole 1</span>
 </header>
 
@@ -341,29 +362,25 @@
   <button class="btn-primary" id="btn-scorecard">📋 Card</button>
 </div>
 
-<!-- SCORECARD PANEL -->
+<!-- ── SCORECARD ── -->
 <div id="scorecard-panel">
   <h2>Scorecard <button id="btn-close-card">✕</button></h2>
   <table>
     <thead>
-      <tr>
-        <th>Hole</th>
-        <th>Par</th>
-        <th>Score</th>
-        <th>+/−</th>
-      </tr>
+      <tr><th>Hole</th><th>Par</th><th>Score</th><th>+/−</th></tr>
     </thead>
     <tbody id="scorecard-body"></tbody>
     <tfoot>
       <tr id="total-row">
         <td>Total</td>
-        <td id="total-par">36</td>
+        <td id="total-par">—</td>
         <td id="total-score">—</td>
         <td id="total-diff">—</td>
       </tr>
     </tfoot>
   </table>
   <br/>
+  <button class="btn-secondary" id="btn-change-course" style="width:100%;padding:10px;margin-bottom:8px;">🔍 Change Course</button>
   <button class="btn-danger" id="btn-reset" style="width:100%;padding:10px;">Reset Round</button>
 </div>
 
@@ -371,77 +388,177 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
+// ─── CONFIG — PASTE YOUR API KEY HERE ────────────────────────────────────────
+const API_KEY = 'YOUR_API_KEY_HERE';
+const API_BASE = 'https://api.golfcourseapi.com/v1';
+
 // ─── STATE ───────────────────────────────────────────────────────────────────
-const HOLES = 9;
-const PARS  = [4,3,5,4,4,3,5,4,3]; // default pars, edit to match your course
+let HOLES = 18;
+let PARS  = Array(18).fill(4);
+let courseName = 'Golf GPS';
 
 let state = {
   currentHole: 1,
-  scores: Array(HOLES).fill(null),
-  shots:  Array(HOLES).fill(0),
+  scores: Array(18).fill(null),
+  shots:  Array(18).fill(0),
   userPos: null,
   targetPos: null,
 };
 
-// ─── MAP SETUP ───────────────────────────────────────────────────────────────
-const map = L.map('map', {
-  zoomControl: false,
-  attributionControl: false,
-}).setView([54.0, -2.5], 15);
+// ─── COURSE SEARCH ───────────────────────────────────────────────────────────
+async function searchCourses(query) {
+  const resultsEl = document.getElementById('course-results');
+  resultsEl.innerHTML = '<div class="search-status">Searching…</div>';
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 20,
-  attribution: '© OpenStreetMap',
-}).addTo(map);
+  try {
+    const res = await fetch(`${API_BASE}/search?search_query=${encodeURIComponent(query)}`, {
+      headers: { 'Authorization': `Key ${API_KEY}` }
+    });
 
-L.control.zoom({ position: 'topright' }).addTo(map);
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    const clubs = data.clubs || [];
 
-const userIcon = L.divIcon({ className: '', html: '<div class="pin-you"></div>', iconSize: [16,16], iconAnchor: [8,8] });
-const targetIcon = L.divIcon({ className: '', html: '<div class="pin-target"></div>', iconSize: [14,14], iconAnchor: [7,7] });
+    if (clubs.length === 0) {
+      resultsEl.innerHTML = '<div class="search-status">No courses found — try a different name</div>';
+      return;
+    }
 
-let userMarker   = null;
-let targetMarker = null;
-
-// ─── HAVERSINE DISTANCE ──────────────────────────────────────────────────────
-function haversineYards(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // metres
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 +
-            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-            Math.sin(dLon/2)**2;
-  const metres = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return Math.round(metres * 1.09361); // yards
+    resultsEl.innerHTML = '';
+    clubs.slice(0, 10).forEach(club => {
+      const div = document.createElement('div');
+      div.className = 'course-result-item';
+      div.innerHTML = `
+        <div class="course-name">${club.club_name}</div>
+        <div class="course-meta">${[club.city, club.country].filter(Boolean).join(', ')}</div>
+      `;
+      div.addEventListener('click', () => loadCourse(club));
+      resultsEl.appendChild(div);
+    });
+  } catch (err) {
+    resultsEl.innerHTML = `<div class="search-status">Error: ${err.message}<br/>Check your API key is set correctly</div>`;
+  }
 }
 
-// ─── UPDATE DISTANCE DISPLAY ─────────────────────────────────────────────────
+async function loadCourse(club) {
+  const resultsEl = document.getElementById('course-results');
+  resultsEl.innerHTML = '<div class="search-status">Loading course data…</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/clubs/${club.id}`, {
+      headers: { 'Authorization': `Key ${API_KEY}` }
+    });
+
+    if (!res.ok) throw new Error('Could not load course');
+    const data = await res.json();
+
+    // Pick the first course from the club
+    const course = data.club?.courses?.[0];
+    if (!course || !course.holes?.length) {
+      // Fall back to club info only — use default pars
+      startRound(club.club_name, null);
+      return;
+    }
+
+    const holes = course.holes.sort((a, b) => a.hole_number - b.hole_number);
+    const pars = holes.map(h => h.par || 4);
+    startRound(club.club_name, pars);
+
+  } catch (err) {
+    // If detailed load fails, still start with club name but default pars
+    showToast('Could not load hole data — using default pars');
+    startRound(club.club_name, null);
+  }
+}
+
+function startRound(name, pars) {
+  courseName = name;
+  if (pars && pars.length > 0) {
+    HOLES = pars.length;
+    PARS  = pars;
+  } else {
+    HOLES = 18;
+    PARS  = Array(18).fill(4);
+  }
+
+  state.scores = Array(HOLES).fill(null);
+  state.shots  = Array(HOLES).fill(0);
+
+  document.getElementById('app-title').textContent = '⛳ ' + name;
+  document.getElementById('course-overlay').style.display = 'none';
+  setHole(1);
+  showToast(`${name} loaded — ${HOLES} holes`);
+}
+
+function skipCourseSelect() {
+  HOLES = 9;
+  PARS  = [4,3,5,4,4,3,5,4,3];
+  state.scores = Array(HOLES).fill(null);
+  state.shots  = Array(HOLES).fill(0);
+  document.getElementById('course-overlay').style.display = 'none';
+  setHole(1);
+  showToast('Using default 9-hole pars');
+}
+
+// ─── COURSE SEARCH UI WIRING ─────────────────────────────────────────────────
+document.getElementById('btn-search-course').addEventListener('click', () => {
+  const q = document.getElementById('course-search-input').value.trim();
+  if (q.length < 2) return;
+  searchCourses(q);
+});
+
+document.getElementById('course-search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-search-course').click();
+});
+
+document.getElementById('btn-skip-course').addEventListener('click', skipCourseSelect);
+
+document.getElementById('btn-change-course').addEventListener('click', () => {
+  document.getElementById('scorecard-panel').classList.remove('open');
+  document.getElementById('course-overlay').style.display = 'flex';
+  document.getElementById('course-results').innerHTML = '<div class="search-status">Enter a course name above to search</div>';
+  document.getElementById('course-search-input').value = '';
+});
+
+// ─── MAP SETUP ───────────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([54.0, -2.5], 15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20 }).addTo(map);
+L.control.zoom({ position: 'topright' }).addTo(map);
+
+const userIcon   = L.divIcon({ className: '', html: '<div class="pin-you"></div>',    iconSize: [16,16], iconAnchor: [8,8] });
+const targetIcon = L.divIcon({ className: '', html: '<div class="pin-target"></div>', iconSize: [14,14], iconAnchor: [7,7] });
+
+let userMarker = null, targetMarker = null;
+
+// ─── HAVERSINE ───────────────────────────────────────────────────────────────
+function haversineYards(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 1.09361);
+}
+
 function updateDistance() {
   if (state.userPos && state.targetPos) {
-    const yards = haversineYards(
-      state.userPos.lat, state.userPos.lng,
-      state.targetPos.lat, state.targetPos.lng
-    );
-    document.getElementById('dist-target').textContent = yards.toLocaleString();
+    const y = haversineYards(state.userPos.lat, state.userPos.lng, state.targetPos.lat, state.targetPos.lng);
+    document.getElementById('dist-target').textContent = y.toLocaleString();
   } else {
     document.getElementById('dist-target').textContent = '—';
   }
 }
 
-// ─── GEOLOCATION ─────────────────────────────────────────────────────────────
+// ─── GPS ─────────────────────────────────────────────────────────────────────
 let watchId = null;
 
 function startTracking() {
-  if (!navigator.geolocation) {
-    showToast('GPS not supported on this device');
-    return;
-  }
+  if (!navigator.geolocation) { showToast('GPS not supported'); return; }
   showToast('Locating…');
   watchId = navigator.geolocation.watchPosition(
     pos => {
       const { latitude: lat, longitude: lng, accuracy } = pos.coords;
       state.userPos = { lat, lng };
       document.getElementById('dist-accuracy').textContent = Math.round(accuracy);
-
       if (!userMarker) {
         userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
         map.setView([lat, lng], 17);
@@ -451,32 +568,26 @@ function startTracking() {
       }
       updateDistance();
     },
-    err => {
-      showToast('GPS error: ' + err.message);
-    },
+    err => showToast('GPS error: ' + err.message),
     { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
   );
 }
 
-// ─── TAP TO SET TARGET ───────────────────────────────────────────────────────
+// ─── MAP TAP ─────────────────────────────────────────────────────────────────
 map.on('click', e => {
+  document.getElementById('scorecard-panel').classList.remove('open');
   state.targetPos = e.latlng;
   if (!targetMarker) {
     targetMarker = L.marker(e.latlng, { icon: targetIcon })
-      .bindTooltip('', { permanent: true, className: 'dist-tooltip', direction: 'top' })
-      .addTo(map);
+      .bindTooltip('', { permanent: true, direction: 'top' }).addTo(map);
   } else {
     targetMarker.setLatLng(e.latlng);
   }
   updateDistance();
-  if (state.userPos && state.targetPos) {
-    const yards = haversineYards(
-      state.userPos.lat, state.userPos.lng,
-      state.targetPos.lat, state.targetPos.lng
-    );
-    targetMarker.setTooltipContent(yards + ' yds');
+  if (state.userPos) {
+    const y = haversineYards(state.userPos.lat, state.userPos.lng, e.latlng.lat, e.latlng.lng);
+    targetMarker.setTooltipContent(y + ' yds');
   }
-  showToast('Target set — tap map to move it');
 });
 
 // ─── SCORECARD ───────────────────────────────────────────────────────────────
@@ -486,31 +597,26 @@ function buildScorecard() {
   let totalPar = 0, totalScore = 0, hasScore = false;
 
   for (let h = 1; h <= HOLES; h++) {
-    const par   = PARS[h-1];
+    const par = PARS[h-1];
     const score = state.scores[h-1];
     totalPar += par;
-
     const diff = score !== null ? score - par : null;
     if (score !== null) { totalScore += score; hasScore = true; }
 
     let diffLabel = '—', diffClass = '';
     if (diff !== null) {
-      if (diff <= -2) { diffLabel = '−2'; diffClass = 'birdie'; }
-      else if (diff === -1) { diffLabel = 'Birdie'; diffClass = 'birdie'; }
-      else if (diff === 0)  { diffLabel = 'Par';    diffClass = 'par'; }
-      else if (diff === 1)  { diffLabel = '+1';     diffClass = 'bogey'; }
-      else                  { diffLabel = '+'+diff; diffClass = 'double'; }
+      if (diff <= -2)      { diffLabel = '−2';     diffClass = 'birdie'; }
+      else if (diff === -1){ diffLabel = 'Birdie';  diffClass = 'birdie'; }
+      else if (diff === 0) { diffLabel = 'Par';     diffClass = 'par'; }
+      else if (diff === 1) { diffLabel = '+1';      diffClass = 'bogey'; }
+      else                 { diffLabel = '+'+diff;  diffClass = 'double'; }
     }
 
     const row = document.createElement('tr');
     if (h === state.currentHole) row.style.background = 'rgba(82,183,136,0.08)';
     row.innerHTML = `
-      <td>${h}</td>
-      <td>${par}</td>
-      <td class="score-cell">
-        <input type="number" min="1" max="15" value="${score ?? ''}" 
-               placeholder="${par}" data-hole="${h}" />
-      </td>
+      <td>${h}</td><td>${par}</td>
+      <td class="score-cell"><input type="number" min="1" max="15" value="${score ?? ''}" placeholder="${par}" data-hole="${h}"/></td>
       <td class="${diffClass}">${diffLabel}</td>
     `;
     tbody.appendChild(row);
@@ -519,10 +625,8 @@ function buildScorecard() {
   document.getElementById('total-par').textContent = totalPar;
   document.getElementById('total-score').textContent = hasScore ? totalScore : '—';
   const td = totalScore - totalPar;
-  document.getElementById('total-diff').textContent = hasScore
-    ? (td === 0 ? 'E' : (td > 0 ? '+'+td : td)) : '—';
+  document.getElementById('total-diff').textContent = hasScore ? (td === 0 ? 'E' : (td > 0 ? '+'+td : td)) : '—';
 
-  // live score input
   tbody.querySelectorAll('input').forEach(input => {
     input.addEventListener('change', e => {
       const h = parseInt(e.target.dataset.hole);
@@ -538,7 +642,6 @@ function setHole(h) {
   state.currentHole = Math.max(1, Math.min(HOLES, h));
   document.getElementById('hole-label').textContent = `Hole ${state.currentHole}`;
   document.getElementById('shot-count').textContent = state.shots[state.currentHole-1];
-  // clear target when changing holes
   if (targetMarker) { map.removeLayer(targetMarker); targetMarker = null; }
   state.targetPos = null;
   updateDistance();
@@ -552,15 +655,12 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 // ─── BUTTON WIRING ───────────────────────────────────────────────────────────
 document.getElementById('btn-locate').addEventListener('click', () => {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
   startTracking();
 });
 
@@ -574,7 +674,6 @@ document.getElementById('btn-clear-pin').addEventListener('click', () => {
 document.getElementById('btn-add-shot').addEventListener('click', () => {
   state.shots[state.currentHole-1]++;
   document.getElementById('shot-count').textContent = state.shots[state.currentHole-1];
-  // auto-fill score on scorecard
   state.scores[state.currentHole-1] = state.shots[state.currentHole-1];
   showToast(`Shot ${state.shots[state.currentHole-1]} logged`);
 });
@@ -600,15 +699,6 @@ document.getElementById('btn-reset').addEventListener('click', () => {
     showToast('Round reset');
   }
 });
-
-// close card on outside tap
-map.on('click', () => {
-  document.getElementById('scorecard-panel').classList.remove('open');
-});
-
-// ─── INIT ────────────────────────────────────────────────────────────────────
-setHole(1);
-showToast('Tap 📍 to get your GPS location');
 </script>
 </body>
 </html>
