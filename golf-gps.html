@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Golf GPS"/>
+  <meta name="theme-color" content="#0f2027"/>
   <title>Golf GPS</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
@@ -16,23 +20,41 @@
     }
     body { font-family: 'DM Sans', sans-serif; background: var(--sky); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* COURSE SCREEN */
-    #course-screen { position: fixed; inset: 0; background: var(--sky); z-index: 5000; display: flex; flex-direction: column; padding: 28px 20px 20px; gap: 16px; }
-    #course-screen h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 4px; color: var(--fairway); }
-    #course-screen p { color: var(--muted); font-size: .85rem; margin-top: -8px; }
-    #course-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-    .course-card { background: var(--panel2); border: 1px solid rgba(149,213,178,.12); border-radius: 12px; padding: 16px; cursor: pointer; transition: all .15s; }
-    .course-card:active { border-color: var(--fairway); background: rgba(82,183,136,.1); }
-    .course-card .cname { font-weight: 500; font-size: 1rem; margin-bottom: 4px; }
-    .course-card .cmeta { font-size: .78rem; color: var(--muted); }
-    .course-card .cpars { font-size: .72rem; color: var(--accent); margin-top: 6px; letter-spacing: .5px; }
+    /* ── SCREENS ── */
+    .screen { position: fixed; inset: 0; background: var(--sky); z-index: 5000; display: flex; flex-direction: column; padding: 28px 20px 20px; gap: 14px; }
+    .screen h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 4px; color: var(--fairway); }
+    .screen .sub { color: var(--muted); font-size: .85rem; margin-top: -6px; }
+    .screen-tabs { display: flex; gap: 8px; }
+    .tab { flex: 1; padding: 8px; border-radius: 8px; text-align: center; font-size: .8rem; font-weight: 500; cursor: pointer; border: 1px solid rgba(149,213,178,.15); color: var(--muted); background: none; transition: all .15s; }
+    .tab.active { background: var(--green); color: var(--green-pale); border-color: var(--green); }
+    .scroll-area { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 
-    /* HEADER */
+    /* ── COURSE CARDS ── */
+    .course-card { background: var(--panel2); border: 1px solid rgba(149,213,178,.12); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all .15s; }
+    .course-card:active { border-color: var(--fairway); background: rgba(82,183,136,.1); }
+    .course-card .cname { font-weight: 500; font-size: .95rem; margin-bottom: 3px; }
+    .course-card .cmeta { font-size: .75rem; color: var(--muted); }
+    .course-card .cpars { font-size: .7rem; color: var(--accent); margin-top: 5px; }
+
+    /* ── HISTORY CARDS ── */
+    .history-card { background: var(--panel2); border: 1px solid rgba(149,213,178,.1); border-radius: 12px; padding: 14px 16px; }
+    .history-card .hrow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .history-card .hcourse { font-weight: 500; font-size: .9rem; }
+    .history-card .hscore { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 1px; }
+    .history-card .hdate { font-size: .72rem; color: var(--muted); }
+    .history-card .hdiff { font-size: .8rem; font-weight: 500; }
+    .history-card .hpars { font-size: .68rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
+    .over  { color: var(--red); }
+    .under { color: #4ade80; }
+    .even  { color: var(--accent); }
+    .empty-state { text-align: center; color: var(--muted); font-size: .85rem; padding: 40px 20px; }
+
+    /* ── HEADER ── */
     header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid rgba(149,213,178,.15); flex-shrink: 0; }
     header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 3px; color: var(--fairway); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 62vw; }
     .hole-badge { background: var(--green); border-radius: 8px; padding: 4px 12px; font-size: .75rem; font-weight: 500; color: var(--green-pale); letter-spacing: 1px; white-space: nowrap; }
 
-    /* DIST BAR */
+    /* ── DIST BAR ── */
     #dist-bar { background: var(--panel2); display: flex; justify-content: space-around; padding: 8px 12px; border-bottom: 1px solid rgba(149,213,178,.1); flex-shrink: 0; }
     .dist-item { text-align: center; }
     .dist-label { font-size: .6rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 2px; }
@@ -40,11 +62,16 @@
     .dist-value.big { color: var(--sand); font-size: 2rem; }
     .dist-unit { font-size: .6rem; color: var(--muted); text-transform: uppercase; }
 
-    /* MAP */
+    /* ── CLUB SUGGESTION ── */
+    #club-bar { background: rgba(82,183,136,.08); border-bottom: 1px solid rgba(149,213,178,.1); padding: 6px 16px; display: none; flex-shrink: 0; text-align: center; }
+    #club-bar .club-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; color: var(--fairway); }
+    #club-bar .club-sub { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ── MAP ── */
     #map { flex: 1; min-height: 0; }
     .leaflet-container { background: #1a2e1a; }
 
-    /* TOOLBAR */
+    /* ── TOOLBAR ── */
     #toolbar { background: var(--panel); padding: 10px 12px; display: flex; gap: 8px; align-items: center; border-top: 1px solid rgba(149,213,178,.1); flex-shrink: 0; overflow-x: auto; }
     button { border: none; cursor: pointer; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: .78rem; transition: all .15s; white-space: nowrap; }
     .btn-p { background: var(--green); color: var(--green-pale); padding: 8px 14px; }
@@ -53,8 +80,8 @@
     .btn-d { background: rgba(231,111,81,.15); color: var(--red); border: 1px solid rgba(231,111,81,.25); padding: 8px 14px; }
     .spacer { flex: 1; }
 
-    /* SCORECARD */
-    #sc-panel { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 2px solid var(--green-light); border-radius: 16px 16px 0 0; padding: 16px; transform: translateY(100%); transition: transform .3s ease; z-index: 2000; max-height: 72dvh; overflow-y: auto; }
+    /* ── SCORECARD PANEL ── */
+    #sc-panel { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 2px solid var(--green-light); border-radius: 16px 16px 0 0; padding: 16px; transform: translateY(100%); transition: transform .3s ease; z-index: 2000; max-height: 75dvh; overflow-y: auto; }
     #sc-panel.open { transform: translateY(0); }
     #sc-panel h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 2px; color: var(--fairway); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
     #sc-panel h2 button { font-size: 1rem; background: none; color: var(--muted); padding: 0 6px; }
@@ -68,26 +95,33 @@
     .score-cell input:focus { outline: none; border-color: var(--fairway); }
     .birdie { color: #4ade80; } .par { color: var(--text); } .bogey { color: var(--sand); } .double { color: var(--red); }
     #total-row td { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--accent); border-top: 1px solid rgba(149,213,178,.2); padding-top: 8px; }
+    .sc-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .sc-actions button { flex: 1; padding: 10px; }
 
-    /* TOAST */
+    /* ── TOAST ── */
     #toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%) translateY(-10px); background: var(--green); color: var(--green-pale); padding: 8px 18px; border-radius: 20px; font-size: .8rem; font-weight: 500; opacity: 0; transition: all .3s; z-index: 6000; pointer-events: none; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* MARKERS */
+    /* ── MARKERS ── */
     .pin-you { width: 16px; height: 16px; background: var(--fairway); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 4px rgba(82,183,136,.3); }
     .pin-target { width: 14px; height: 14px; background: var(--sand); border: 2px solid #fff; border-radius: 50%; }
   </style>
 </head>
 <body>
 
-<!-- COURSE SELECTION -->
-<div id="course-screen">
+<!-- ── COURSE / HISTORY SCREEN ── -->
+<div class="screen" id="home-screen">
   <h1>⛳ Golf GPS</h1>
-  <p>Select your course to get started</p>
-  <div id="course-list"></div>
+  <div class="screen-tabs">
+    <button class="tab active" id="tab-courses" onclick="showTab('courses')">Courses</button>
+    <button class="tab" id="tab-history" onclick="showTab('history')">History</button>
+  </div>
+
+  <div class="scroll-area" id="course-list"></div>
+  <div class="scroll-area" id="history-list" style="display:none"></div>
 </div>
 
-<!-- MAIN APP -->
+<!-- ── MAIN APP ── -->
 <header>
   <h1 id="hdr-title">⛳ Golf GPS</h1>
   <span class="hole-badge" id="hdr-hole">Hole 1 · Par 4</span>
@@ -111,6 +145,11 @@
   </div>
 </div>
 
+<div id="club-bar">
+  <div class="club-sub">Suggested Club</div>
+  <div class="club-name" id="club-name">—</div>
+</div>
+
 <div id="map"></div>
 
 <div id="toolbar">
@@ -121,10 +160,10 @@
   <button class="btn-s" id="btn-prev">◀</button>
   <button class="btn-s" id="btn-next">▶</button>
   <button class="btn-p" id="btn-card">📋 Card</button>
-  <button class="btn-s" id="btn-course">⛳</button>
+  <button class="btn-s" id="btn-home">⛳</button>
 </div>
 
-<!-- SCORECARD -->
+<!-- ── SCORECARD PANEL ── -->
 <div id="sc-panel">
   <h2>Scorecard <button id="btn-close-card">✕</button></h2>
   <div id="sc-course"></div>
@@ -133,8 +172,10 @@
     <tbody id="sc-body"></tbody>
     <tfoot><tr id="total-row"><td>Total</td><td id="t-par">—</td><td id="t-score">—</td><td id="t-diff">—</td></tr></tfoot>
   </table>
-  <br/>
-  <button class="btn-d" id="btn-reset" style="width:100%;padding:10px">Reset Round</button>
+  <div class="sc-actions">
+    <button class="btn-s" id="btn-save-round">💾 Save Round</button>
+    <button class="btn-d" id="btn-reset">Reset</button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -144,40 +185,113 @@
 
 // ── COURSES ───────────────────────────────────────────────────────────────────
 const COURSES = [
-  {
-    name: 'Scrabo Golf Club',
-    location: 'Newtownards, Co. Down',
-    par: 71,
-    pars: [4,3,4,3,5,4,4,4,5, 4,5,4,3,4,4,4,3,4]
-  },
-  {
-    name: 'Clandeboye — Dufferin',
-    location: 'Conlig, Co. Down',
-    par: 71,
-    pars: [4,3,4,4,3,5,4,4,4, 4,3,5,4,3,5,4,4,4]
-  },
-  {
-    name: 'Donaghadee Golf Club',
-    location: 'Donaghadee, Co. Down',
-    par: 72,
-    pars: [4,5,5,4,4,4,4,4,3, 4,4,5,3,4,4,4,3,4]
-  },
-  {
-    name: 'Bangor Golf Club',
-    location: 'Bangor, Co. Down',
-    par: 71,
-    pars: [4,4,4,4,5,4,3,4,4, 5,4,3,4,3,4,5,3,4]
-  }
+  { name: 'Scrabo Golf Club',      location: 'Newtownards, Co. Down', par: 71,
+    pars: [4,3,4,3,5,4,4,4,5, 4,5,4,3,4,4,4,3,4] },
+  { name: 'Clandeboye — Dufferin', location: 'Conlig, Co. Down',      par: 71,
+    pars: [4,3,4,4,3,5,4,4,4, 4,3,5,4,3,5,4,4,4] },
+  { name: 'Donaghadee Golf Club',  location: 'Donaghadee, Co. Down',  par: 72,
+    pars: [4,5,5,4,4,4,4,4,3, 4,4,5,3,4,4,4,3,4] },
+  { name: 'Bangor Golf Club',      location: 'Bangor, Co. Down',      par: 71,
+    pars: [4,4,4,4,5,4,3,4,4, 5,4,3,4,3,4,5,3,4] }
 ];
+
+// ── CLUB DISTANCES (yards) ────────────────────────────────────────────────────
+const CLUBS = [
+  { name: 'Driver',   max: 999, min: 220 },
+  { name: '3 Wood',   max: 219, min: 195 },
+  { name: '5 Wood',   max: 194, min: 175 },
+  { name: '4 Iron',   max: 174, min: 160 },
+  { name: '5 Iron',   max: 159, min: 148 },
+  { name: '6 Iron',   max: 147, min: 136 },
+  { name: '7 Iron',   max: 135, min: 124 },
+  { name: '8 Iron',   max: 123, min: 112 },
+  { name: '9 Iron',   max: 111, min: 100 },
+  { name: 'PW',       max: 99,  min: 80  },
+  { name: 'SW',       max: 79,  min: 50  },
+  { name: 'Putter',   max: 49,  min: 0   },
+];
+
+function suggestClub(y) {
+  return CLUBS.find(c => y <= c.max && y >= c.min)?.name || null;
+}
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let G = {
   holes: 18, pars: Array(18).fill(4),
   scores: Array(18).fill(null), shots: Array(18).fill(0),
-  hole: 1, userPos: null, targetPos: null, courseName: ''
+  hole: 1, userPos: null, targetPos: null,
+  courseName: '', coursePar: 72
 };
 
-// ── BUILD COURSE LIST ─────────────────────────────────────────────────────────
+// ── LOCALSTORAGE ──────────────────────────────────────────────────────────────
+function saveCurrentRound() {
+  const data = {
+    courseName: G.courseName, coursePar: G.coursePar,
+    pars: G.pars, scores: G.scores, shots: G.shots,
+    hole: G.hole, holes: G.holes
+  };
+  localStorage.setItem('golf_current', JSON.stringify(data));
+}
+
+function loadCurrentRound() {
+  try {
+    const raw = localStorage.getItem('golf_current');
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    G.courseName = data.courseName;
+    G.coursePar  = data.coursePar;
+    G.pars       = data.pars;
+    G.scores     = data.scores;
+    G.shots      = data.shots;
+    G.holes      = data.holes;
+    G.hole       = data.hole;
+    document.getElementById('hdr-title').textContent = '⛳ ' + G.courseName;
+    document.getElementById('sc-course').textContent = G.courseName + ' · Par ' + G.coursePar;
+    document.getElementById('home-screen').style.display = 'none';
+    setHole(G.hole);
+    toast('Round resumed: ' + G.courseName);
+    return true;
+  } catch(e) { return false; }
+}
+
+function saveToHistory() {
+  const totalScore = G.scores.reduce((a, s) => a + (s || 0), 0);
+  const holesPlayed = G.scores.filter(s => s !== null).length;
+  if (holesPlayed === 0) { toast('No scores to save'); return; }
+
+  const entry = {
+    id: Date.now(),
+    date: new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }),
+    courseName: G.courseName,
+    coursePar: G.coursePar,
+    pars: G.pars,
+    scores: G.scores,
+    totalScore,
+    holesPlayed
+  };
+
+  const history = getHistory();
+  history.unshift(entry);
+  localStorage.setItem('golf_history', JSON.stringify(history.slice(0, 50)));
+  localStorage.removeItem('golf_current');
+  toast('Round saved! 🎉');
+}
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('golf_history') || '[]'); }
+  catch(e) { return []; }
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(tab) {
+  document.getElementById('tab-courses').classList.toggle('active', tab === 'courses');
+  document.getElementById('tab-history').classList.toggle('active', tab === 'history');
+  document.getElementById('course-list').style.display  = tab === 'courses' ? 'flex' : 'none';
+  document.getElementById('history-list').style.display = tab === 'history' ? 'flex' : 'none';
+  if (tab === 'history') buildHistoryList();
+}
+
+// ── COURSE LIST ───────────────────────────────────────────────────────────────
 function buildCourseList() {
   const list = document.getElementById('course-list');
   list.innerHTML = '';
@@ -194,25 +308,65 @@ function buildCourseList() {
   });
 }
 
+// ── HISTORY LIST ──────────────────────────────────────────────────────────────
+function buildHistoryList() {
+  const list = document.getElementById('history-list');
+  const history = getHistory();
+  if (history.length === 0) {
+    list.innerHTML = '<div class="empty-state">No rounds saved yet.<br/>Complete a round and tap 💾 Save Round.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  history.forEach(entry => {
+    const diff = entry.totalScore - entry.coursePar;
+    const diffStr = diff === 0 ? 'E' : (diff > 0 ? '+' + diff : diff);
+    const diffClass = diff < 0 ? 'under' : diff > 0 ? 'over' : 'even';
+    const holeScores = entry.scores.map((s, i) => {
+      if (s === null) return '—';
+      const d = s - (entry.pars[i] || 4);
+      if (d <= -1) return `<span class="birdie">${s}</span>`;
+      if (d === 0)  return `<span class="par">${s}</span>`;
+      if (d === 1)  return `<span class="bogey">${s}</span>`;
+      return `<span class="double">${s}</span>`;
+    }).join(' ');
+
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    card.innerHTML = `
+      <div class="hrow">
+        <div class="hcourse">${entry.courseName}</div>
+        <div class="hscore ${diffClass}">${diffStr}</div>
+      </div>
+      <div class="hrow">
+        <div class="hdate">${entry.date} · ${entry.holesPlayed} holes played</div>
+        <div class="hdiff ${diffClass}">${entry.totalScore} total</div>
+      </div>
+      <div class="hpars">${holeScores}</div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+// ── START ROUND ───────────────────────────────────────────────────────────────
 function startRound(course) {
-  G.holes = 18;
-  G.pars = course.pars;
-  G.scores = Array(18).fill(null);
-  G.shots  = Array(18).fill(0);
-  G.courseName = course.name;
+  G.holes = 18; G.pars = course.pars;
+  G.scores = Array(18).fill(null); G.shots = Array(18).fill(0);
+  G.courseName = course.name; G.coursePar = course.par;
   document.getElementById('hdr-title').textContent = '⛳ ' + course.name;
   document.getElementById('sc-course').textContent = course.name + ' · Par ' + course.par;
-  document.getElementById('course-screen').style.display = 'none';
+  document.getElementById('home-screen').style.display = 'none';
   setHole(1);
+  saveCurrentRound();
   toast(course.name + ' — let\'s go!');
 }
 
 buildCourseList();
 
-// ── COURSE BUTTON ─────────────────────────────────────────────────────────────
-document.getElementById('btn-course').addEventListener('click', () => {
+// ── HOME BUTTON ───────────────────────────────────────────────────────────────
+document.getElementById('btn-home').addEventListener('click', () => {
   document.getElementById('sc-panel').classList.remove('open');
-  document.getElementById('course-screen').style.display = 'flex';
+  document.getElementById('home-screen').style.display = 'flex';
+  showTab('courses');
 });
 
 // ── MAP ───────────────────────────────────────────────────────────────────────
@@ -247,17 +401,29 @@ function startGPS() {
   }, err => toast('GPS: ' + err.message), { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 });
 }
 
-// ── DISTANCE ──────────────────────────────────────────────────────────────────
-function yards(la1, lo1, la2, lo2) {
+// ── DISTANCE + CLUB SUGGESTION ────────────────────────────────────────────────
+function yardsCalc(la1, lo1, la2, lo2) {
   const R = 6371000, dL = (la2-la1)*Math.PI/180, dO = (lo2-lo1)*Math.PI/180;
   const a = Math.sin(dL/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 1.09361);
 }
+
 function updateDist() {
-  if (G.userPos && G.targetPos)
-    document.getElementById('dist-target').textContent = yards(G.userPos.lat, G.userPos.lng, G.targetPos.lat, G.targetPos.lng).toLocaleString();
-  else
+  if (G.userPos && G.targetPos) {
+    const y = yardsCalc(G.userPos.lat, G.userPos.lng, G.targetPos.lat, G.targetPos.lng);
+    document.getElementById('dist-target').textContent = y.toLocaleString();
+    const club = suggestClub(y);
+    const clubBar = document.getElementById('club-bar');
+    if (club) {
+      document.getElementById('club-name').textContent = club;
+      clubBar.style.display = 'block';
+    } else {
+      clubBar.style.display = 'none';
+    }
+  } else {
     document.getElementById('dist-target').textContent = '—';
+    document.getElementById('club-bar').style.display = 'none';
+  }
 }
 
 map.on('click', e => {
@@ -268,7 +434,7 @@ map.on('click', e => {
   else
     targetMarker.setLatLng(e.latlng);
   updateDist();
-  if (G.userPos) targetMarker.setTooltipContent(yards(G.userPos.lat, G.userPos.lng, e.latlng.lat, e.latlng.lng) + ' yds');
+  if (G.userPos) targetMarker.setTooltipContent(yardsCalc(G.userPos.lat, G.userPos.lng, e.latlng.lat, e.latlng.lng) + ' yds');
 });
 
 // ── SCORECARD ─────────────────────────────────────────────────────────────────
@@ -277,8 +443,7 @@ function buildCard() {
   tbody.innerHTML = '';
   let tp = 0, ts = 0, hasScore = false;
   for (let h = 1; h <= G.holes; h++) {
-    const par = G.pars[h-1] || 4;
-    const score = G.scores[h-1];
+    const par = G.pars[h-1] || 4, score = G.scores[h-1];
     tp += par;
     if (score !== null) { ts += score; hasScore = true; }
     const diff = score !== null ? score - par : null;
@@ -303,6 +468,7 @@ function buildCard() {
     inp.addEventListener('change', e => {
       const h = parseInt(e.target.dataset.hole), v = parseInt(e.target.value);
       G.scores[h-1] = isNaN(v) ? null : v;
+      saveCurrentRound();
       buildCard();
     });
   });
@@ -315,7 +481,9 @@ function setHole(h) {
   document.getElementById('hdr-hole').textContent = `Hole ${G.hole} · Par ${par}`;
   document.getElementById('dist-shots').textContent = G.shots[G.hole-1];
   if (targetMarker) { map.removeLayer(targetMarker); targetMarker = null; }
-  G.targetPos = null; updateDist();
+  G.targetPos = null;
+  document.getElementById('club-bar').style.display = 'none';
+  updateDist();
   toast(`Hole ${G.hole} — Par ${par}`);
 }
 
@@ -332,24 +500,32 @@ function toast(msg) {
 document.getElementById('btn-locate').addEventListener('click', startGPS);
 document.getElementById('btn-clear').addEventListener('click', () => {
   if (targetMarker) { map.removeLayer(targetMarker); targetMarker = null; }
-  G.targetPos = null; updateDist(); toast('Pin cleared');
+  G.targetPos = null;
+  document.getElementById('club-bar').style.display = 'none';
+  updateDist(); toast('Pin cleared');
 });
 document.getElementById('btn-shot').addEventListener('click', () => {
   G.shots[G.hole-1]++;
   G.scores[G.hole-1] = G.shots[G.hole-1];
   document.getElementById('dist-shots').textContent = G.shots[G.hole-1];
+  saveCurrentRound();
   toast('Shot ' + G.shots[G.hole-1] + ' logged');
 });
-document.getElementById('btn-prev').addEventListener('click', () => setHole(G.hole - 1));
-document.getElementById('btn-next').addEventListener('click', () => setHole(G.hole + 1));
+document.getElementById('btn-prev').addEventListener('click', () => { setHole(G.hole - 1); saveCurrentRound(); });
+document.getElementById('btn-next').addEventListener('click', () => { setHole(G.hole + 1); saveCurrentRound(); });
 document.getElementById('btn-card').addEventListener('click', () => { buildCard(); document.getElementById('sc-panel').classList.add('open'); });
 document.getElementById('btn-close-card').addEventListener('click', () => document.getElementById('sc-panel').classList.remove('open'));
+document.getElementById('btn-save-round').addEventListener('click', () => { saveToHistory(); document.getElementById('sc-panel').classList.remove('open'); });
 document.getElementById('btn-reset').addEventListener('click', () => {
   if (confirm('Reset the whole round?')) {
     G.scores = Array(G.holes).fill(null); G.shots = Array(G.holes).fill(0);
+    localStorage.removeItem('golf_current');
     setHole(1); toast('Round reset');
   }
 });
+
+// ── ON LOAD — resume round if one was in progress ─────────────────────────────
+loadCurrentRound();
 
 </script>
 </body>
