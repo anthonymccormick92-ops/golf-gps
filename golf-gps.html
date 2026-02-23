@@ -105,6 +105,8 @@
     /* ── MARKERS ── */
     .pin-you { width: 16px; height: 16px; background: var(--fairway); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 4px rgba(82,183,136,.3); }
     .pin-target { width: 14px; height: 14px; background: var(--sand); border: 2px solid #fff; border-radius: 50%; }
+    .pin-tee   { width: 12px; height: 12px; background: #fff; border: 2px solid var(--fairway); border-radius: 3px; }
+    .pin-green { width: 14px; height: 14px; background: #4ade80; border: 2px solid #fff; border-radius: 50%; }
   </style>
 </head>
 <body>
@@ -186,7 +188,28 @@
 // ── COURSES ───────────────────────────────────────────────────────────────────
 const COURSES = [
   { name: 'Scrabo Golf Club',      location: 'Newtownards, Co. Down', par: 71,
-    pars: [4,3,4,3,5,4,4,4,5, 4,5,4,3,4,4,4,3,4] },
+    pars: [4,3,4,3,5,4,4,4,5, 4,5,4,3,4,4,4,3,4],
+    holes: [
+      { tee: [54.5762, -5.7055],     green: [54.578524, -5.708865] }, // H1  369y
+      { tee: [54.578524, -5.708865], green: [54.577698, -5.708042] }, // H2  116y
+      { tee: [54.577698, -5.708042], green: [54.57875,  -5.713028] }, // H3  374y
+      { tee: [54.57875,  -5.713028], green: [54.577885, -5.713571] }, // H4  112y
+      { tee: [54.577885, -5.713571], green: [54.58077,  -5.709394] }, // H5  458y
+      { tee: [54.58077,  -5.709394], green: [54.578614, -5.70804]  }, // H6  279y
+      { tee: [54.578614, -5.70804],  green: [54.579032, -5.703946] }, // H7  293y
+      { tee: [54.579032, -5.703946], green: [54.581258, -5.705344] }, // H8  288y
+      { tee: [54.581258, -5.705344], green: [54.577605, -5.701705] }, // H9  513y
+      { tee: [54.577605, -5.701705], green: [54.578426, -5.697812] }, // H10 292y
+      { tee: [54.578426, -5.697812], green: [54.581097, -5.701679] }, // H11 424y
+      { tee: [54.581097, -5.701679], green: [54.577983, -5.703635] }, // H12 403y
+      { tee: [54.577983, -5.703635], green: [54.577983, -5.70128]  }, // H13 166y
+      { tee: [54.577983, -5.70128],  green: [54.580761, -5.700435] }, // H14 343y
+      { tee: [54.580761, -5.700435], green: [54.581249, -5.705214] }, // H15 342y
+      { tee: [54.581249, -5.705214], green: [54.578675, -5.705214] }, // H16 313y
+      { tee: [54.578675, -5.705214], green: [54.579131, -5.70385]  }, // H17 111y
+      { tee: [54.579131, -5.70385],  green: [54.577698, -5.700905] }, // H18 271y
+    ]
+  },
   { name: 'Clandeboye — Dufferin', location: 'Conlig, Co. Down',      par: 71,
     pars: [4,3,4,4,3,5,4,4,4, 4,3,5,4,3,5,4,4,4] },
   { name: 'Donaghadee Golf Club',  location: 'Donaghadee, Co. Down',  par: 72,
@@ -355,6 +378,7 @@ function startRound(course) {
   document.getElementById('hdr-title').textContent = '⛳ ' + course.name;
   document.getElementById('sc-course').textContent = course.name + ' · Par ' + course.par;
   document.getElementById('home-screen').style.display = 'none';
+  clearHoleOverlay();
   setHole(1);
   saveCurrentRound();
   toast(course.name + ' — let\'s go!');
@@ -386,6 +410,32 @@ L.control.zoom({ position: 'topright' }).addTo(map);
 const userIcon   = L.divIcon({ className: '', html: '<div class="pin-you"></div>',    iconSize: [16,16], iconAnchor: [8,8] });
 const targetIcon = L.divIcon({ className: '', html: '<div class="pin-target"></div>', iconSize: [14,14], iconAnchor: [7,7] });
 let userMarker = null, targetMarker = null;
+let teeMarker = null, greenMarker = null, holeLine = null;
+
+const teeIcon   = L.divIcon({ className: '', html: '<div class="pin-tee"></div>',   iconSize: [12,12], iconAnchor: [6,6] });
+const greenIcon = L.divIcon({ className: '', html: '<div class="pin-green"></div>', iconSize: [14,14], iconAnchor: [7,7] });
+
+function clearHoleOverlay() {
+  if (teeMarker)   { map.removeLayer(teeMarker);   teeMarker   = null; }
+  if (greenMarker) { map.removeLayer(greenMarker); greenMarker = null; }
+  if (holeLine)    { map.removeLayer(holeLine);    holeLine    = null; }
+}
+
+function drawHoleOverlay(holeIndex) {
+  clearHoleOverlay();
+  const course = COURSES.find(c => c.name === G.courseName);
+  if (!course || !course.holes) return;
+  const h = course.holes[holeIndex];
+  if (!h) return;
+
+  teeMarker   = L.marker(h.tee,   { icon: teeIcon   }).bindTooltip('Tee',   { permanent: false, direction: 'top' }).addTo(map);
+  greenMarker = L.marker(h.green, { icon: greenIcon }).bindTooltip('Green', { permanent: false, direction: 'top' }).addTo(map);
+  holeLine    = L.polyline([h.tee, h.green], { color: 'rgba(82,183,136,0.5)', weight: 2, dashArray: '6 4' }).addTo(map);
+
+  // Fit map to show full hole
+  const bounds = L.latLngBounds([h.tee, h.green]).pad(0.3);
+  map.fitBounds(bounds);
+}
 
 // ── GPS ───────────────────────────────────────────────────────────────────────
 let watchId = null;
@@ -491,6 +541,7 @@ function setHole(h) {
   G.targetPos = null;
   document.getElementById('club-bar').style.display = 'none';
   updateDist();
+  drawHoleOverlay(G.hole - 1);
   toast(`Hole ${G.hole} — Par ${par}`);
 }
 
