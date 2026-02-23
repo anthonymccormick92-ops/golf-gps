@@ -371,9 +371,9 @@ document.getElementById('btn-home').addEventListener('click', () => {
 
 // ── MAP ───────────────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([54.5, -5.6], 11);
-L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png', {
-  maxZoom: 18,
-  attribution: '&copy; Stadia Maps &copy; Stamen Design &copy; OpenStreetMap contributors'
+L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+  maxZoom: 17,
+  attribution: '&copy; OpenTopoMap &copy; OpenStreetMap contributors'
 }).addTo(map);
 L.control.zoom({ position: 'topright' }).addTo(map);
 const userIcon   = L.divIcon({ className: '', html: '<div class="pin-you"></div>',    iconSize: [16,16], iconAnchor: [8,8] });
