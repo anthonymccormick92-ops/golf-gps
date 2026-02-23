@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Golf GPS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #2d6a4f;
+      --green-light: #40916c;
+      --green-pale: #d8f3dc;
+      --fairway: #52b788;
+      --sand: #e9c46a;
+      --sky: #1a1a2e;
+      --panel: #0f2027;
+      --panel2: #162636;
+      --text: #e8f5e9;
+      --muted: #7aab8a;
+      --accent: #95d5b2;
+      --red: #e76f51;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--sky);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid rgba(149,213,178,0.15);
+      flex-shrink: 0;
+      z-index: 1000;
+    }
+
+    header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 3px;
+      color: var(--fairway);
+    }
+
+    header .hole-badge {
+      background: var(--green);
+      border-radius: 8px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--green-pale);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── DISTANCE BAR ── */
+    #dist-bar {
+      background: var(--panel2);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(149,213,178,0.1);
+      flex-shrink: 0;
+    }
+
+    .dist-item {
+      text-align: center;
+    }
+
+    .dist-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .dist-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 1px;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .dist-value.highlight {
+      color: var(--sand);
+      font-size: 2rem;
+    }
+
+    .dist-unit {
+      font-size: 0.6rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* ── MAP ── */
+    #map {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .leaflet-container {
+      background: #1a2e1a;
+    }
+
+    /* ── TOOLBAR ── */
+    #toolbar {
+      background: var(--panel);
+      padding: 10px 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px solid rgba(149,213,178,0.1);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 0.78rem;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: var(--green-pale);
+      padding: 8px 14px;
+    }
+    .btn-primary:hover { background: var(--green-light); }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-secondary {
+      background: rgba(149,213,178,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(149,213,178,0.2);
+      padding: 8px 14px;
+    }
+    .btn-secondary:hover { background: rgba(149,213,178,0.18); }
+
+    .btn-danger {
+      background: rgba(231,111,81,0.15);
+      color: var(--red);
+      border: 1px solid rgba(231,111,81,0.25);
+      padding: 8px 14px;
+    }
+    .btn-danger:hover { background: rgba(231,111,81,0.25); }
+
+    .spacer { flex: 1; }
+
+    /* ── SCORECARD PANEL ── */
+    #scorecard-panel {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--panel);
+      border-top: 2px solid var(--green-light);
+      border-radius: 16px 16px 0 0;
+      padding: 16px;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+      z-index: 2000;
+      max-height: 70dvh;
+      overflow-y: auto;
+    }
+
+    #scorecard-panel.open { transform: translateY(0); }
+
+    #scorecard-panel h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      color: var(--fairway);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #scorecard-panel h2 button {
+      font-size: 1rem;
+      background: none;
+      color: var(--muted);
+      padding: 0 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    thead tr {
+      border-bottom: 1px solid rgba(149,213,178,0.2);
+    }
+
+    th {
+      text-align: center;
+      padding: 6px 4px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    td {
+      text-align: center;
+      padding: 5px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    td:first-child { color: var(--muted); font-size: 0.75rem; }
+
+    .score-cell {
+      position: relative;
+    }
+
+    .score-cell input {
+      width: 36px;
+      height: 32px;
+      background: rgba(149,213,178,0.08);
+      border: 1px solid rgba(149,213,178,0.15);
+      border-radius: 6px;
+      color: var(--text);
+      text-align: center;
+      font-size: 0.9rem;
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 1px;
+    }
+
+    .score-cell input:focus {
+      outline: none;
+      border-color: var(--fairway);
+      background: rgba(82,183,136,0.15);
+    }
+
+    .birdie  { color: #4ade80; }
+    .par     { color: var(--text); }
+    .bogey   { color: var(--sand); }
+    .double  { color: var(--red); }
+
+    #total-row td {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      color: var(--accent);
+      border-top: 1px solid rgba(149,213,178,0.2);
+      padding-top: 8px;
+    }
+
+    /* ── STATUS TOAST ── */
+    #toast {
+      position: fixed;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      background: var(--green);
+      color: var(--green-pale);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 3000;
+      pointer-events: none;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── CUSTOM LEAFLET MARKERS ── */
+    .pin-you {
+      width: 16px; height: 16px;
+      background: var(--fairway);
+      border: 3px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(82,183,136,0.3);
+    }
+    .pin-target {
+      width: 14px; height: 14px;
+      background: var(--sand);
+      border: 2px solid #fff;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⛳ Golf GPS</h1>
+  <span class="hole-badge" id="hole-label">Hole 1</span>
+</header>
+
+<div id="dist-bar">
+  <div class="dist-item">
+    <div class="dist-label">To Target</div>
+    <div class="dist-value highlight" id="dist-target">—</div>
+    <div class="dist-unit">yards</div>
+  </div>
+  <div class="dist-item">
+    <div class="dist-label">GPS Accuracy</div>
+    <div class="dist-value" id="dist-accuracy">—</div>
+    <div class="dist-unit">metres</div>
+  </div>
+  <div class="dist-item">
+    <div class="dist-label">Shots</div>
+    <div class="dist-value" id="shot-count">0</div>
+    <div class="dist-unit">this hole</div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div id="toolbar">
+  <button class="btn-primary" id="btn-locate">📍 Find Me</button>
+  <button class="btn-secondary" id="btn-clear-pin">Clear Pin</button>
+  <button class="btn-secondary" id="btn-add-shot">＋ Shot</button>
+  <div class="spacer"></div>
+  <button class="btn-secondary" id="btn-prev-hole">◀</button>
+  <button class="btn-secondary" id="btn-next-hole">▶</button>
+  <button class="btn-primary" id="btn-scorecard">📋 Card</button>
+</div>
+
+<!-- SCORECARD PANEL -->
+<div id="scorecard-panel">
+  <h2>Scorecard <button id="btn-close-card">✕</button></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Hole</th>
+        <th>Par</th>
+        <th>Score</th>
+        <th>+/−</th>
+      </tr>
+    </thead>
+    <tbody id="scorecard-body"></tbody>
+    <tfoot>
+      <tr id="total-row">
+        <td>Total</td>
+        <td id="total-par">36</td>
+        <td id="total-score">—</td>
+        <td id="total-diff">—</td>
+      </tr>
+    </tfoot>
+  </table>
+  <br/>
+  <button class="btn-danger" id="btn-reset" style="width:100%;padding:10px;">Reset Round</button>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const HOLES = 9;
+const PARS  = [4,3,5,4,4,3,5,4,3]; // default pars, edit to match your course
+
+let state = {
+  currentHole: 1,
+  scores: Array(HOLES).fill(null),
+  shots:  Array(HOLES).fill(0),
+  userPos: null,
+  targetPos: null,
+};
+
+// ─── MAP SETUP ───────────────────────────────────────────────────────────────
+const map = L.map('map', {
+  zoomControl: false,
+  attributionControl: false,
+}).setView([54.0, -2.5], 15);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 20,
+  attribution: '© OpenStreetMap',
+}).addTo(map);
+
+L.control.zoom({ position: 'topright' }).addTo(map);
+
+const userIcon = L.divIcon({ className: '', html: '<div class="pin-you"></div>', iconSize: [16,16], iconAnchor: [8,8] });
+const targetIcon = L.divIcon({ className: '', html: '<div class="pin-target"></div>', iconSize: [14,14], iconAnchor: [7,7] });
+
+let userMarker   = null;
+let targetMarker = null;
+
+// ─── HAVERSINE DISTANCE ──────────────────────────────────────────────────────
+function haversineYards(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // metres
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+            Math.sin(dLon/2)**2;
+  const metres = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return Math.round(metres * 1.09361); // yards
+}
+
+// ─── UPDATE DISTANCE DISPLAY ─────────────────────────────────────────────────
+function updateDistance() {
+  if (state.userPos && state.targetPos) {
+    const yards = haversineYards(
+      state.userPos.lat, state.userPos.lng,
+      state.targetPos.lat, state.targetPos.lng
+    );
+    document.getElementById('dist-target').textContent = yards.toLocaleString();
+  } else {
+    document.getElementById('dist-target').textContent = '—';
+  }
+}
+
+// ─── GEOLOCATION ─────────────────────────────────────────────────────────────
+let watchId = null;
+
+function startTracking() {
+  if (!navigator.geolocation) {
+    showToast('GPS not supported on this device');
+    return;
+  }
+  showToast('Locating…');
+  watchId = navigator.geolocation.watchPosition(
+    pos => {
+      const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+      state.userPos = { lat, lng };
+      document.getElementById('dist-accuracy').textContent = Math.round(accuracy);
+
+      if (!userMarker) {
+        userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
+        map.setView([lat, lng], 17);
+        showToast('GPS locked ✓');
+      } else {
+        userMarker.setLatLng([lat, lng]);
+      }
+      updateDistance();
+    },
+    err => {
+      showToast('GPS error: ' + err.message);
+    },
+    { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+  );
+}
+
+// ─── TAP TO SET TARGET ───────────────────────────────────────────────────────
+map.on('click', e => {
+  state.targetPos = e.latlng;
+  if (!targetMarker) {
+    targetMarker = L.marker(e.latlng, { icon: targetIcon })
+      .bindTooltip('', { permanent: true, className: 'dist-tooltip', direction: 'top' })
+      .addTo(map);
+  } else {
+    targetMarker.setLatLng(e.latlng);
+  }
+  updateDistance();
+  if (state.userPos && state.targetPos) {
+    const yards = haversineYards(
+      state.userPos.lat, state.userPos.lng,
+      state.targetPos.lat, state.targetPos.lng
+    );
+    targetMarker.setTooltipContent(yards + ' yds');
+  }
+  showToast('Target set — tap map to move it');
+});
+
+// ─── SCORECARD ───────────────────────────────────────────────────────────────
+function buildScorecard() {
+  const tbody = document.getElementById('scorecard-body');
+  tbody.innerHTML = '';
+  let totalPar = 0, totalScore = 0, hasScore = false;
+
+  for (let h = 1; h <= HOLES; h++) {
+    const par   = PARS[h-1];
+    const score = state.scores[h-1];
+    totalPar += par;
+
+    const diff = score !== null ? score - par : null;
+    if (score !== null) { totalScore += score; hasScore = true; }
+
+    let diffLabel = '—', diffClass = '';
+    if (diff !== null) {
+      if (diff <= -2) { diffLabel = '−2'; diffClass = 'birdie'; }
+      else if (diff === -1) { diffLabel = 'Birdie'; diffClass = 'birdie'; }
+      else if (diff === 0)  { diffLabel = 'Par';    diffClass = 'par'; }
+      else if (diff === 1)  { diffLabel = '+1';     diffClass = 'bogey'; }
+      else                  { diffLabel = '+'+diff; diffClass = 'double'; }
+    }
+
+    const row = document.createElement('tr');
+    if (h === state.currentHole) row.style.background = 'rgba(82,183,136,0.08)';
+    row.innerHTML = `
+      <td>${h}</td>
+      <td>${par}</td>
+      <td class="score-cell">
+        <input type="number" min="1" max="15" value="${score ?? ''}" 
+               placeholder="${par}" data-hole="${h}" />
+      </td>
+      <td class="${diffClass}">${diffLabel}</td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  document.getElementById('total-par').textContent = totalPar;
+  document.getElementById('total-score').textContent = hasScore ? totalScore : '—';
+  const td = totalScore - totalPar;
+  document.getElementById('total-diff').textContent = hasScore
+    ? (td === 0 ? 'E' : (td > 0 ? '+'+td : td)) : '—';
+
+  // live score input
+  tbody.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', e => {
+      const h = parseInt(e.target.dataset.hole);
+      const v = parseInt(e.target.value);
+      state.scores[h-1] = isNaN(v) ? null : v;
+      buildScorecard();
+    });
+  });
+}
+
+// ─── HOLE NAV ────────────────────────────────────────────────────────────────
+function setHole(h) {
+  state.currentHole = Math.max(1, Math.min(HOLES, h));
+  document.getElementById('hole-label').textContent = `Hole ${state.currentHole}`;
+  document.getElementById('shot-count').textContent = state.shots[state.currentHole-1];
+  // clear target when changing holes
+  if (targetMarker) { map.removeLayer(targetMarker); targetMarker = null; }
+  state.targetPos = null;
+  updateDistance();
+  showToast(`Hole ${state.currentHole} — Par ${PARS[state.currentHole-1]}`);
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ─── BUTTON WIRING ───────────────────────────────────────────────────────────
+document.getElementById('btn-locate').addEventListener('click', () => {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  startTracking();
+});
+
+document.getElementById('btn-clear-pin').addEventListener('click', () => {
+  if (targetMarker) { map.removeLayer(targetMarker); targetMarker = null; }
+  state.targetPos = null;
+  updateDistance();
+  showToast('Target cleared');
+});
+
+document.getElementById('btn-add-shot').addEventListener('click', () => {
+  state.shots[state.currentHole-1]++;
+  document.getElementById('shot-count').textContent = state.shots[state.currentHole-1];
+  // auto-fill score on scorecard
+  state.scores[state.currentHole-1] = state.shots[state.currentHole-1];
+  showToast(`Shot ${state.shots[state.currentHole-1]} logged`);
+});
+
+document.getElementById('btn-prev-hole').addEventListener('click', () => setHole(state.currentHole - 1));
+document.getElementById('btn-next-hole').addEventListener('click', () => setHole(state.currentHole + 1));
+
+document.getElementById('btn-scorecard').addEventListener('click', () => {
+  buildScorecard();
+  document.getElementById('scorecard-panel').classList.add('open');
+});
+
+document.getElementById('btn-close-card').addEventListener('click', () => {
+  document.getElementById('scorecard-panel').classList.remove('open');
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  if (confirm('Reset the whole round?')) {
+    state.scores = Array(HOLES).fill(null);
+    state.shots  = Array(HOLES).fill(0);
+    setHole(1);
+    buildScorecard();
+    showToast('Round reset');
+  }
+});
+
+// close card on outside tap
+map.on('click', () => {
+  document.getElementById('scorecard-panel').classList.remove('open');
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+setHole(1);
+showToast('Tap 📍 to get your GPS location');
+</script>
+</body>
+</html>
