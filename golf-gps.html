@@ -134,7 +134,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // ── PASTE YOUR GOLF COURSE API KEY HERE ──────────────────────────────────────
-const API_KEY = 'NL4XV5UUX7WX4VFDQMMJH2RVJE';
+const API_KEY = 'YOUR_API_KEY_HERE';
 
 let state = {
   currentHole:1, totalHoles:18, pars:[], courseName:'',
@@ -147,14 +147,12 @@ async function searchCourses(query) {
   const resEl=document.getElementById('course-results');
   loadEl.style.display='block'; errEl.style.display='none'; resEl.innerHTML='';
   try {
-    const res=await fetch(
-      `https://corsproxy.io/?url=${encodeURIComponent('https://api.golfcourseapi.com/v1/search?search_query='+encodeURIComponent(query))}`,
-      {headers:{'Authorization':`Key ${API_KEY}`}}
-    );
-    if(!res.ok) throw new Error('API '+res.status);
-    const data=await res.json();
+    const apiUrl=`https://api.golfcourseapi.com/v1/search?search_query=${encodeURIComponent(query)}`;
+    const res=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}&callback=?`.replace('&callback=?',''),{headers:{'Authorization':`Key ${API_KEY}`}});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const wrapper=await res.json();
+    const data=JSON.parse(wrapper.contents);
     loadEl.style.display='none';
-    // API returns { clubs: [...] }
     const clubs = data.clubs || data.courses || [];
     if(!clubs.length){errEl.textContent='No courses found. Try a different name.';errEl.style.display='block';return;}
     clubs.slice(0,15).forEach(club=>{
@@ -175,14 +173,12 @@ async function searchCourses(query) {
 
 async function loadCourse(club) {
   showToast('Loading course…');
-  // Use club_id (not id) — this is what the API actually returns
   const clubId = club.club_id || club.id;
   try {
-    const res=await fetch(
-      `https://corsproxy.io/?url=${encodeURIComponent('https://api.golfcourseapi.com/v1/clubs/'+clubId)}`,
-      {headers:{'Authorization':`Key ${API_KEY}`}}
-    );
-    const data=await res.json();
+    const apiUrl=`https://api.golfcourseapi.com/v1/clubs/${clubId}`;
+    const res=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`,{headers:{'Authorization':`Key ${API_KEY}`}});
+    const wrapper=await res.json();
+    const data=JSON.parse(wrapper.contents);
 
     // Try to find hole par data — may be in courses[0].holes or tees
     let pars = [];
