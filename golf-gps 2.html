@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Golf GPS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--green:#2d6a4f;--green-light:#40916c;--green-pale:#d8f3dc;--fairway:#52b788;--sand:#e9c46a;--sky:#1a1a2e;--panel:#0f2027;--panel2:#162636;--text:#e8f5e9;--muted:#7aab8a;--accent:#95d5b2;--red:#e76f51}
+    body{font-family:'DM Sans',sans-serif;background:var(--sky);color:var(--text);height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+    #course-screen{position:fixed;inset:0;background:var(--sky);z-index:5000;display:flex;flex-direction:column;padding:24px 16px}
+    #course-screen h1{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:4px;color:var(--fairway);margin-bottom:6px}
+    #course-screen p{color:var(--muted);font-size:.85rem;margin-bottom:20px}
+    .search-row{display:flex;gap:8px;margin-bottom:12px}
+    .search-row input{flex:1;background:var(--panel2);border:1px solid rgba(149,213,178,.2);border-radius:10px;color:var(--text);padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:.9rem}
+    .search-row input::placeholder{color:var(--muted)}
+    .search-row input:focus{outline:none;border-color:var(--fairway)}
+    #course-results{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+    .course-card{background:var(--panel2);border:1px solid rgba(149,213,178,.1);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .15s}
+    .course-card:active{border-color:var(--fairway);background:rgba(82,183,136,.1)}
+    .course-card .cname{font-weight:500;font-size:.9rem;margin-bottom:3px}
+    .course-card .cloc{font-size:.75rem;color:var(--muted)}
+    .course-card .choles{font-size:.72rem;color:var(--accent);margin-top:4px}
+    #course-loading{text-align:center;color:var(--muted);font-size:.85rem;padding:24px;display:none}
+    #course-error{text-align:center;color:var(--red);font-size:.82rem;padding:16px;display:none}
+    header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel);border-bottom:1px solid rgba(149,213,178,.15);flex-shrink:0;z-index:1000}
+    header h1{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px;color:var(--fairway);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
+    .hole-badge{background:var(--green);border-radius:8px;padding:4px 12px;font-size:.75rem;font-weight:500;color:var(--green-pale);text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+    #dist-bar{background:var(--panel2);display:flex;justify-content:space-around;padding:8px 12px;border-bottom:1px solid rgba(149,213,178,.1);flex-shrink:0}
+    .dist-item{text-align:center}
+    .dist-label{font-size:.6rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:2px}
+    .dist-value{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;color:var(--accent);line-height:1}
+    .dist-value.highlight{color:var(--sand);font-size:2rem}
+    .dist-unit{font-size:.6rem;color:var(--muted);text-transform:uppercase}
+    #map{flex:1;min-height:0}
+    .leaflet-container{background:#1a2e1a}
+    #toolbar{background:var(--panel);padding:10px 12px;display:flex;gap:8px;align-items:center;border-top:1px solid rgba(149,213,178,.1);flex-shrink:0;overflow-x:auto}
+    button{border:none;cursor:pointer;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:500;font-size:.78rem;transition:all .15s;white-space:nowrap}
+    .btn-primary{background:var(--green);color:var(--green-pale);padding:8px 14px}
+    .btn-primary:active{transform:scale(.97)}
+    .btn-secondary{background:rgba(149,213,178,.1);color:var(--accent);border:1px solid rgba(149,213,178,.2);padding:8px 14px}
+    .btn-danger{background:rgba(231,111,81,.15);color:var(--red);border:1px solid rgba(231,111,81,.25);padding:8px 14px}
+    .spacer{flex:1}
+    #scorecard-panel{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:2px solid var(--green-light);border-radius:16px 16px 0 0;padding:16px;transform:translateY(100%);transition:transform .3s ease;z-index:2000;max-height:70dvh;overflow-y:auto}
+    #scorecard-panel.open{transform:translateY(0)}
+    #scorecard-panel h2{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--fairway);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+    #scorecard-course-name{font-size:.75rem;color:var(--muted);margin-bottom:12px}
+    #scorecard-panel h2 button{font-size:1rem;background:none;color:var(--muted);padding:0 6px}
+    table{width:100%;border-collapse:collapse;font-size:.82rem}
+    thead tr{border-bottom:1px solid rgba(149,213,178,.2)}
+    th{text-align:center;padding:6px 4px;font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:500}
+    td{text-align:center;padding:5px 4px;border-bottom:1px solid rgba(255,255,255,.04)}
+    td:first-child{color:var(--muted);font-size:.75rem}
+    .score-cell input{width:36px;height:32px;background:rgba(149,213,178,.08);border:1px solid rgba(149,213,178,.15);border-radius:6px;color:var(--text);text-align:center;font-size:.9rem;font-family:'Bebas Neue',sans-serif}
+    .score-cell input:focus{outline:none;border-color:var(--fairway);background:rgba(82,183,136,.15)}
+    .birdie{color:#4ade80}.par{color:var(--text)}.bogey{color:var(--sand)}.double{color:var(--red)}
+    #total-row td{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;color:var(--accent);border-top:1px solid rgba(149,213,178,.2);padding-top:8px}
+    #toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--green);color:var(--green-pale);padding:8px 18px;border-radius:20px;font-size:.8rem;font-weight:500;opacity:0;transition:all .3s;z-index:6000;pointer-events:none}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .pin-you{width:16px;height:16px;background:var(--fairway);border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(82,183,136,.3)}
+    .pin-target{width:14px;height:14px;background:var(--sand);border:2px solid #fff;border-radius:50%}
+  </style>
+</head>
+<body>
+
+<div id="course-screen">
+  <h1>⛳ Golf GPS</h1>
+  <p>Search for your course to get started</p>
+  <div class="search-row">
+    <input type="text" id="course-search-input" placeholder="e.g. Bristol Golf Club" />
+    <button class="btn-primary" id="btn-search-course">Search</button>
+  </div>
+  <div id="course-loading">Searching…</div>
+  <div id="course-error"></div>
+  <div id="course-results"></div>
+</div>
+
+<header>
+  <h1 id="course-title">⛳ Golf GPS</h1>
+  <span class="hole-badge" id="hole-label">Hole 1</span>
+</header>
+
+<div id="dist-bar">
+  <div class="dist-item">
+    <div class="dist-label">To Target</div>
+    <div class="dist-value highlight" id="dist-target">—</div>
+    <div class="dist-unit">yards</div>
+  </div>
+  <div class="dist-item">
+    <div class="dist-label">GPS Accuracy</div>
+    <div class="dist-value" id="dist-accuracy">—</div>
+    <div class="dist-unit">metres</div>
+  </div>
+  <div class="dist-item">
+    <div class="dist-label">Shots</div>
+    <div class="dist-value" id="shot-count">0</div>
+    <div class="dist-unit">this hole</div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div id="toolbar">
+  <button class="btn-primary" id="btn-locate">📍 Find Me</button>
+  <button class="btn-secondary" id="btn-clear-pin">Clear Pin</button>
+  <button class="btn-secondary" id="btn-add-shot">＋ Shot</button>
+  <div class="spacer"></div>
+  <button class="btn-secondary" id="btn-prev-hole">◀</button>
+  <button class="btn-secondary" id="btn-next-hole">▶</button>
+  <button class="btn-primary" id="btn-scorecard">📋 Card</button>
+  <button class="btn-secondary" id="btn-change-course">⛳</button>
+</div>
+
+<div id="scorecard-panel">
+  <h2>Scorecard <button id="btn-close-card">✕</button></h2>
+  <div id="scorecard-course-name"></div>
+  <table>
+    <thead><tr><th>Hole</th><th>Par</th><th>Score</th><th>+/−</th></tr></thead>
+    <tbody id="scorecard-body"></tbody>
+    <tfoot>
+      <tr id="total-row">
+        <td>Total</td><td id="total-par">—</td><td id="total-score">—</td><td id="total-diff">—</td>
+      </tr>
+    </tfoot>
+  </table>
+  <br/>
+  <button class="btn-danger" id="btn-reset" style="width:100%;padding:10px">Reset Round</button>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ── PASTE YOUR GOLF COURSE API KEY HERE ──────────────────────────────────────
+const API_KEY = 'YOUR_API_KEY_HERE';
+
+let state = {
+  currentHole:1, totalHoles:18, pars:[], courseName:'',
+  scores:[], shots:[], userPos:null, targetPos:null
+};
+
+async function searchCourses(query) {
+  const loadEl=document.getElementById('course-loading');
+  const errEl=document.getElementById('course-error');
+  const resEl=document.getElementById('course-results');
+  loadEl.style.display='block'; errEl.style.display='none'; resEl.innerHTML='';
+  try {
+    const res=await fetch(
+      `https://corsproxy.io/?url=${encodeURIComponent('https://api.golfcourseapi.com/v1/search?search_query='+encodeURIComponent(query))}`,
+      {headers:{'Authorization':`Key ${API_KEY}`}}
+    );
+    if(!res.ok) throw new Error('API '+res.status);
+    const data=await res.json();
+    loadEl.style.display='none';
+    const courses=data.courses||[];
+    if(!courses.length){errEl.textContent='No courses found. Try a different name.';errEl.style.display='block';return;}
+    courses.slice(0,15).forEach(course=>{
+      const card=document.createElement('div');
+      card.className='course-card';
+      const holes=course.number_of_holes||'?';
+      const loc=[course.city,course.state,course.country].filter(Boolean).join(', ');
+      card.innerHTML=`<div class="cname">${course.club_name}</div><div class="cloc">${loc}</div><div class="choles">${holes} holes</div>`;
+      card.addEventListener('click',()=>loadCourse(course));
+      resEl.appendChild(card);
+    });
+  } catch(e) {
+    loadEl.style.display='none';
+    errEl.textContent='Search failed. Check your API key or connection.';
+    errEl.style.display='block';
+  }
+}
+
+async function loadCourse(course) {
+  showToast('Loading course…');
+  try {
+    const res=await fetch(`https://corsproxy.io/?url=${encodeURIComponent('https://api.golfcourseapi.com/v1/courses/'+course.id)}`,{headers:{'Authorization':`Key ${API_KEY}`}});
+    const data=await res.json();
+    const holes=data.course?.holes||[];
+    const pars=holes.map(h=>h.par||4);
+    state.courseName=course.club_name;
+    state.totalHoles=pars.length||course.number_of_holes||18;
+    state.pars=pars.length?pars:Array(state.totalHoles).fill(4);
+    state.scores=Array(state.totalHoles).fill(null);
+    state.shots=Array(state.totalHoles).fill(0);
+    document.getElementById('course-title').textContent='⛳ '+course.club_name;
+    document.getElementById('scorecard-course-name').textContent=course.club_name;
+    document.getElementById('course-screen').style.display='none';
+    setHole(1);
+    showToast(course.club_name+' loaded ✓');
+    if(data.course?.location?.latitude) map.setView([data.course.location.latitude,data.course.location.longitude],16);
+  } catch(e) {
+    const h=course.number_of_holes||18;
+    state.courseName=course.club_name; state.totalHoles=h;
+    state.pars=Array(h).fill(4); state.scores=Array(h).fill(null); state.shots=Array(h).fill(0);
+    document.getElementById('course-title').textContent='⛳ '+course.club_name;
+    document.getElementById('scorecard-course-name').textContent=course.club_name;
+    document.getElementById('course-screen').style.display='none';
+    setHole(1); showToast(course.club_name+' loaded');
+  }
+}
+
+document.getElementById('btn-search-course').addEventListener('click',()=>{
+  const q=document.getElementById('course-search-input').value.trim(); if(q) searchCourses(q);
+});
+document.getElementById('course-search-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const q=e.target.value.trim();if(q)searchCourses(q);}
+});
+document.getElementById('btn-change-course').addEventListener('click',()=>{
+  document.getElementById('course-screen').style.display='flex';
+  document.getElementById('course-results').innerHTML='';
+  document.getElementById('course-search-input').value='';
+  document.getElementById('course-error').style.display='none';
+});
+
+const map=L.map('map',{zoomControl:false,attributionControl:false}).setView([54,-2.5],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20}).addTo(map);
+L.control.zoom({position:'topright'}).addTo(map);
+
+const userIcon=L.divIcon({className:'',html:'<div class="pin-you"></div>',iconSize:[16,16],iconAnchor:[8,8]});
+const targetIcon=L.divIcon({className:'',html:'<div class="pin-target"></div>',iconSize:[14,14],iconAnchor:[7,7]});
+let userMarker=null,targetMarker=null;
+
+function hvYards(la1,lo1,la2,lo2){
+  const R=6371000,dL=(la2-la1)*Math.PI/180,dO=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;
+  return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))*1.09361);
+}
+
+function updateDistance(){
+  if(state.userPos&&state.targetPos)
+    document.getElementById('dist-target').textContent=hvYards(state.userPos.lat,state.userPos.lng,state.targetPos.lat,state.targetPos.lng).toLocaleString();
+  else document.getElementById('dist-target').textContent='—';
+}
+
+let watchId=null;
+function startTracking(){
+  if(!navigator.geolocation){showToast('GPS not supported');return;}
+  showToast('Locating…');
+  if(watchId!==null)navigator.geolocation.clearWatch(watchId);
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    const{latitude:lat,longitude:lng,accuracy}=pos.coords;
+    state.userPos={lat,lng};
+    document.getElementById('dist-accuracy').textContent=Math.round(accuracy);
+    if(!userMarker){userMarker=L.marker([lat,lng],{icon:userIcon}).addTo(map);map.setView([lat,lng],17);showToast('GPS locked ✓');}
+    else userMarker.setLatLng([lat,lng]);
+    updateDistance();
+  },err=>showToast('GPS error: '+err.message),{enableHighAccuracy:true,maximumAge:2000,timeout:10000});
+}
+
+map.on('click',e=>{
+  state.targetPos=e.latlng;
+  if(!targetMarker) targetMarker=L.marker(e.latlng,{icon:targetIcon}).bindTooltip('',{permanent:true,direction:'top'}).addTo(map);
+  else targetMarker.setLatLng(e.latlng);
+  updateDistance();
+  if(state.userPos){const y=hvYards(state.userPos.lat,state.userPos.lng,e.latlng.lat,e.latlng.lng);targetMarker.setTooltipContent(y+' yds');}
+  document.getElementById('scorecard-panel').classList.remove('open');
+});
+
+function buildScorecard(){
+  const tbody=document.getElementById('scorecard-body');
+  tbody.innerHTML='';
+  let tp=0,ts=0,has=false;
+  for(let h=1;h<=state.totalHoles;h++){
+    const par=state.pars[h-1]||4,score=state.scores[h-1];
+    tp+=par;
+    const diff=score!==null?score-par:null;
+    if(score!==null){ts+=score;has=true;}
+    let dl='—',dc='';
+    if(diff!==null){
+      if(diff<=-2){dl='−2';dc='birdie';}
+      else if(diff===-1){dl='Birdie';dc='birdie';}
+      else if(diff===0){dl='Par';dc='par';}
+      else if(diff===1){dl='+1';dc='bogey';}
+      else{dl='+'+diff;dc='double';}
+    }
+    const row=document.createElement('tr');
+    if(h===state.currentHole)row.style.background='rgba(82,183,136,.08)';
+    row.innerHTML=`<td>${h}</td><td>${par}</td><td class="score-cell"><input type="number" min="1" max="15" value="${score??''}" placeholder="${par}" data-hole="${h}"/></td><td class="${dc}">${dl}</td>`;
+    tbody.appendChild(row);
+  }
+  document.getElementById('total-par').textContent=tp;
+  document.getElementById('total-score').textContent=has?ts:'—';
+  const td=ts-tp;
+  document.getElementById('total-diff').textContent=has?(td===0?'E':(td>0?'+'+td:td)):'—';
+  tbody.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change',e=>{
+      const h=parseInt(e.target.dataset.hole),v=parseInt(e.target.value);
+      state.scores[h-1]=isNaN(v)?null:v;buildScorecard();
+    });
+  });
+}
+
+function setHole(h){
+  state.currentHole=Math.max(1,Math.min(state.totalHoles,h));
+  document.getElementById('hole-label').textContent=`Hole ${state.currentHole} · Par ${state.pars[state.currentHole-1]||4}`;
+  document.getElementById('shot-count').textContent=state.shots[state.currentHole-1];
+  if(targetMarker){map.removeLayer(targetMarker);targetMarker=null;}
+  state.targetPos=null;updateDistance();
+  showToast(`Hole ${state.currentHole} — Par ${state.pars[state.currentHole-1]||4}`);
+}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+document.getElementById('btn-locate').addEventListener('click',startTracking);
+document.getElementById('btn-clear-pin').addEventListener('click',()=>{
+  if(targetMarker){map.removeLayer(targetMarker);targetMarker=null;}
+  state.targetPos=null;updateDistance();showToast('Target cleared');
+});
+document.getElementById('btn-add-shot').addEventListener('click',()=>{
+  state.shots[state.currentHole-1]++;
+  document.getElementById('shot-count').textContent=state.shots[state.currentHole-1];
+  state.scores[state.currentHole-1]=state.shots[state.currentHole-1];
+  showToast(`Shot ${state.shots[state.currentHole-1]} logged`);
+});
+document.getElementById('btn-prev-hole').addEventListener('click',()=>setHole(state.currentHole-1));
+document.getElementById('btn-next-hole').addEventListener('click',()=>setHole(state.currentHole+1));
+document.getElementById('btn-scorecard').addEventListener('click',()=>{buildScorecard();document.getElementById('scorecard-panel').classList.add('open');});
+document.getElementById('btn-close-card').addEventListener('click',()=>document.getElementById('scorecard-panel').classList.remove('open'));
+document.getElementById('btn-reset').addEventListener('click',()=>{
+  if(confirm('Reset the whole round?')){
+    state.scores=Array(state.totalHoles).fill(null);state.shots=Array(state.totalHoles).fill(0);
+    setHole(1);buildScorecard();showToast('Round reset');
+  }
+});
+</script>
+</body>
+</html>
