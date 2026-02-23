@@ -17,22 +17,15 @@
     body { font-family: 'DM Sans', sans-serif; background: var(--sky); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
     /* COURSE SCREEN */
-    #course-screen { position: fixed; inset: 0; background: var(--sky); z-index: 5000; display: flex; flex-direction: column; padding: 28px 20px 20px; gap: 14px; }
+    #course-screen { position: fixed; inset: 0; background: var(--sky); z-index: 5000; display: flex; flex-direction: column; padding: 28px 20px 20px; gap: 16px; }
     #course-screen h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 4px; color: var(--fairway); }
-    #course-screen p { color: var(--muted); font-size: .85rem; margin-top: -6px; }
-    .search-row { display: flex; gap: 8px; }
-    #course-search-input { flex: 1; background: var(--panel2); border: 1px solid rgba(149,213,178,.25); border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .95rem; padding: 11px 14px; }
-    #course-search-input::placeholder { color: var(--muted); }
-    #course-search-input:focus { outline: none; border-color: var(--fairway); }
-    #course-results { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    #course-status { text-align: center; color: var(--muted); font-size: .82rem; padding: 20px 0; }
-    #course-status.error { color: var(--red); }
-    .course-card { background: var(--panel2); border: 1px solid rgba(149,213,178,.12); border-radius: 10px; padding: 12px 14px; cursor: pointer; }
+    #course-screen p { color: var(--muted); font-size: .85rem; margin-top: -8px; }
+    #course-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .course-card { background: var(--panel2); border: 1px solid rgba(149,213,178,.12); border-radius: 12px; padding: 16px; cursor: pointer; transition: all .15s; }
     .course-card:active { border-color: var(--fairway); background: rgba(82,183,136,.1); }
-    .course-card .cname { font-weight: 500; font-size: .9rem; }
-    .course-card .cloc { font-size: .75rem; color: var(--muted); margin-top: 3px; }
-    .course-card .choles { font-size: .72rem; color: var(--accent); margin-top: 4px; }
-    #btn-skip { background: none; border: 1px solid rgba(149,213,178,.15); color: var(--muted); border-radius: 10px; padding: 10px; font-family: 'DM Sans', sans-serif; font-size: .82rem; cursor: pointer; }
+    .course-card .cname { font-weight: 500; font-size: 1rem; margin-bottom: 4px; }
+    .course-card .cmeta { font-size: .78rem; color: var(--muted); }
+    .course-card .cpars { font-size: .72rem; color: var(--accent); margin-top: 6px; letter-spacing: .5px; }
 
     /* HEADER */
     header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid rgba(149,213,178,.15); flex-shrink: 0; }
@@ -87,18 +80,11 @@
 </head>
 <body>
 
-<!-- COURSE SEARCH -->
+<!-- COURSE SELECTION -->
 <div id="course-screen">
   <h1>⛳ Golf GPS</h1>
-  <p>Search for your course to load real pars</p>
-  <div class="search-row">
-    <input type="text" id="course-search-input" placeholder="e.g. Scrabo Golf Club" autocomplete="off" />
-    <button class="btn-p" id="btn-search">Search</button>
-  </div>
-  <div id="course-results">
-    <div id="course-status">Enter a course name to search</div>
-  </div>
-  <button id="btn-skip">Skip — use default pars (Par 4 every hole)</button>
+  <p>Select your course to get started</p>
+  <div id="course-list"></div>
 </div>
 
 <!-- MAIN APP -->
@@ -156,132 +142,88 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 
-// ── API KEY — replace this with your key from golfcourseapi.com ──────────────
-const API_KEY = 'NL4XV5UUX7WX4VFDQMMJH2RVJE';
+// ── COURSES ───────────────────────────────────────────────────────────────────
+const COURSES = [
+  {
+    name: 'Scrabo Golf Club',
+    location: 'Newtownards, Co. Down',
+    par: 71,
+    pars: [4,3,4,3,5,4,4,4,5, 4,5,4,3,4,4,4,3,4]
+  },
+  {
+    name: 'Clandeboye — Dufferin',
+    location: 'Conlig, Co. Down',
+    par: 71,
+    pars: [4,3,4,4,3,5,4,4,4, 4,3,5,4,3,5,4,4,4]
+  },
+  {
+    name: 'Donaghadee Golf Club',
+    location: 'Donaghadee, Co. Down',
+    par: 72,
+    pars: [4,5,5,4,4,4,4,4,3, 4,4,5,3,4,4,4,3,4]
+  },
+  {
+    name: 'Bangor Golf Club',
+    location: 'Bangor, Co. Down',
+    par: 71,
+    pars: [4,4,4,4,5,4,3,4,4, 5,4,3,4,3,4,5,3,4]
+  }
+];
 
-// ── STATE ────────────────────────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────────────────────────
 let G = {
-  holes: 18,
-  pars:  Array(18).fill(4),
-  scores: Array(18).fill(null),
-  shots:  Array(18).fill(0),
-  hole: 1,
-  userPos: null,
-  targetPos: null,
-  courseName: ''
+  holes: 18, pars: Array(18).fill(4),
+  scores: Array(18).fill(null), shots: Array(18).fill(0),
+  hole: 1, userPos: null, targetPos: null, courseName: ''
 };
 
-// ── COURSE SEARCH ────────────────────────────────────────────────────────────
-async function searchCourses(query) {
-  const resultsEl = document.getElementById('course-results');
-  resultsEl.innerHTML = '<div id="course-status">Searching…</div>';
-
-  try {
-    const target = `https://api.golfcourseapi.com/v1/search?search_query=${encodeURIComponent(query)}&key=${API_KEY}`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('Network error ' + res.status);
-    const wrapper = await res.json();
-    const data = JSON.parse(wrapper.contents);
-    const clubs = data.clubs || [];
-
-    if (clubs.length === 0) {
-      resultsEl.innerHTML = '<div id="course-status" class="error">No courses found — try a different name</div>';
-      return;
-    }
-
-    resultsEl.innerHTML = '';
-    clubs.slice(0, 15).forEach(club => {
-      const card = document.createElement('div');
-      card.className = 'course-card';
-      const loc = [club.city, club.state, club.country].filter(Boolean).join(', ');
-      const holes = club.number_of_holes || '18';
-      card.innerHTML = `<div class="cname">${club.club_name}</div><div class="cloc">${loc}</div><div class="choles">${holes} holes</div>`;
-      card.addEventListener('click', () => loadCourse(club));
-      resultsEl.appendChild(card);
-    });
-
-  } catch (err) {
-    resultsEl.innerHTML = `<div id="course-status" class="error">Search failed: ${err.message}</div>`;
-  }
+// ── BUILD COURSE LIST ─────────────────────────────────────────────────────────
+function buildCourseList() {
+  const list = document.getElementById('course-list');
+  list.innerHTML = '';
+  COURSES.forEach(course => {
+    const card = document.createElement('div');
+    card.className = 'course-card';
+    card.innerHTML = `
+      <div class="cname">${course.name}</div>
+      <div class="cmeta">${course.location} · 18 holes · Par ${course.par}</div>
+      <div class="cpars">Pars: ${course.pars.join(' · ')}</div>
+    `;
+    card.addEventListener('click', () => startRound(course));
+    list.appendChild(card);
+  });
 }
 
-async function loadCourse(club) {
-  toast('Loading ' + club.club_name + '…');
-  try {
-    const clubId = club.club_id || club.id;
-    const target = `https://api.golfcourseapi.com/v1/clubs/${clubId}?key=${API_KEY}`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`;
-    const res = await fetch(proxyUrl);
-    const wrapper = await res.json();
-    const data = JSON.parse(wrapper.contents);
-
-    let pars = [];
-    const courses = data.club?.courses || [];
-    for (const course of courses) {
-      const holes = course.holes || [];
-      if (holes.length > 0) {
-        pars = holes
-          .sort((a, b) => (a.hole_number || 0) - (b.hole_number || 0))
-          .map(h => parseInt(h.par) || 4);
-        break;
-      }
-    }
-
-    startRound(club.club_name, parseInt(club.number_of_holes) || 18, pars);
-
-  } catch (err) {
-    startRound(club.club_name, parseInt(club.number_of_holes) || 18, []);
-  }
-}
-
-function startRound(name, numHoles, pars) {
-  G.courseName = name;
-  G.holes = numHoles || 18;
-  G.pars = (pars.length === G.holes) ? pars : Array(G.holes).fill(4);
-  G.scores = Array(G.holes).fill(null);
-  G.shots  = Array(G.holes).fill(0);
-  document.getElementById('hdr-title').textContent = '⛳ ' + name;
-  document.getElementById('sc-course').textContent = name;
+function startRound(course) {
+  G.holes = 18;
+  G.pars = course.pars;
+  G.scores = Array(18).fill(null);
+  G.shots  = Array(18).fill(0);
+  G.courseName = course.name;
+  document.getElementById('hdr-title').textContent = '⛳ ' + course.name;
+  document.getElementById('sc-course').textContent = course.name + ' · Par ' + course.par;
   document.getElementById('course-screen').style.display = 'none';
   setHole(1);
-  toast(name + ' loaded — ' + G.holes + ' holes');
+  toast(course.name + ' — let\'s go!');
 }
 
-function skipCourse() {
-  G.holes = 18; G.pars = Array(18).fill(4);
-  G.scores = Array(18).fill(null); G.shots = Array(18).fill(0);
-  G.courseName = 'Custom Round';
-  document.getElementById('course-screen').style.display = 'none';
-  document.getElementById('sc-course').textContent = 'Custom Round';
-  setHole(1);
-  toast('Using default pars');
-}
+buildCourseList();
 
-document.getElementById('btn-search').addEventListener('click', () => {
-  const q = document.getElementById('course-search-input').value.trim();
-  if (q.length >= 2) searchCourses(q);
-});
-document.getElementById('course-search-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('btn-search').click();
-});
-document.getElementById('btn-skip').addEventListener('click', skipCourse);
+// ── COURSE BUTTON ─────────────────────────────────────────────────────────────
 document.getElementById('btn-course').addEventListener('click', () => {
   document.getElementById('sc-panel').classList.remove('open');
   document.getElementById('course-screen').style.display = 'flex';
-  document.getElementById('course-results').innerHTML = '<div id="course-status">Enter a course name to search</div>';
-  document.getElementById('course-search-input').value = '';
 });
 
-// ── MAP ──────────────────────────────────────────────────────────────────────
-const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([54.5, -4], 6);
+// ── MAP ───────────────────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([54.5, -5.6], 11);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20 }).addTo(map);
 L.control.zoom({ position: 'topright' }).addTo(map);
 const userIcon   = L.divIcon({ className: '', html: '<div class="pin-you"></div>',    iconSize: [16,16], iconAnchor: [8,8] });
 const targetIcon = L.divIcon({ className: '', html: '<div class="pin-target"></div>', iconSize: [14,14], iconAnchor: [7,7] });
 let userMarker = null, targetMarker = null;
 
-// ── GPS ──────────────────────────────────────────────────────────────────────
+// ── GPS ───────────────────────────────────────────────────────────────────────
 let watchId = null;
 function startGPS() {
   if (!navigator.geolocation) { toast('GPS not supported'); return; }
@@ -302,33 +244,31 @@ function startGPS() {
   }, err => toast('GPS: ' + err.message), { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 });
 }
 
-// ── DISTANCE ─────────────────────────────────────────────────────────────────
+// ── DISTANCE ──────────────────────────────────────────────────────────────────
 function yards(la1, lo1, la2, lo2) {
   const R = 6371000, dL = (la2-la1)*Math.PI/180, dO = (lo2-lo1)*Math.PI/180;
   const a = Math.sin(dL/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;
   return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 1.09361);
 }
 function updateDist() {
-  if (G.userPos && G.targetPos) {
+  if (G.userPos && G.targetPos)
     document.getElementById('dist-target').textContent = yards(G.userPos.lat, G.userPos.lng, G.targetPos.lat, G.targetPos.lng).toLocaleString();
-  } else {
+  else
     document.getElementById('dist-target').textContent = '—';
-  }
 }
 
 map.on('click', e => {
   document.getElementById('sc-panel').classList.remove('open');
   G.targetPos = e.latlng;
-  if (!targetMarker) {
+  if (!targetMarker)
     targetMarker = L.marker(e.latlng, { icon: targetIcon }).bindTooltip('', { permanent: true, direction: 'top' }).addTo(map);
-  } else {
+  else
     targetMarker.setLatLng(e.latlng);
-  }
   updateDist();
   if (G.userPos) targetMarker.setTooltipContent(yards(G.userPos.lat, G.userPos.lng, e.latlng.lat, e.latlng.lng) + ' yds');
 });
 
-// ── SCORECARD ────────────────────────────────────────────────────────────────
+// ── SCORECARD ─────────────────────────────────────────────────────────────────
 function buildCard() {
   const tbody = document.getElementById('sc-body');
   tbody.innerHTML = '';
@@ -341,11 +281,11 @@ function buildCard() {
     const diff = score !== null ? score - par : null;
     let dl = '—', dc = '';
     if (diff !== null) {
-      if (diff <= -2)      { dl = '−2';    dc = 'birdie'; }
-      else if (diff === -1){ dl = 'Birdie'; dc = 'birdie'; }
-      else if (diff ===  0){ dl = 'Par';   dc = 'par'; }
-      else if (diff ===  1){ dl = '+1';    dc = 'bogey'; }
-      else                 { dl = '+'+diff; dc = 'double'; }
+      if (diff <= -2)       { dl = '−2';     dc = 'birdie'; }
+      else if (diff === -1) { dl = 'Birdie'; dc = 'birdie'; }
+      else if (diff ===  0) { dl = 'Par';    dc = 'par'; }
+      else if (diff ===  1) { dl = '+1';     dc = 'bogey'; }
+      else                  { dl = '+'+diff; dc = 'double'; }
     }
     const row = document.createElement('tr');
     if (h === G.hole) row.style.background = 'rgba(82,183,136,.08)';
@@ -365,7 +305,7 @@ function buildCard() {
   });
 }
 
-// ── HOLE NAV ─────────────────────────────────────────────────────────────────
+// ── HOLE NAV ──────────────────────────────────────────────────────────────────
 function setHole(h) {
   G.hole = Math.max(1, Math.min(G.holes, h));
   const par = G.pars[G.hole-1] || 4;
@@ -376,7 +316,7 @@ function setHole(h) {
   toast(`Hole ${G.hole} — Par ${par}`);
 }
 
-// ── TOAST ────────────────────────────────────────────────────────────────────
+// ── TOAST ─────────────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg) {
   const el = document.getElementById('toast');
@@ -385,7 +325,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// ── TOOLBAR EVENTS ───────────────────────────────────────────────────────────
+// ── BUTTONS ───────────────────────────────────────────────────────────────────
 document.getElementById('btn-locate').addEventListener('click', startGPS);
 document.getElementById('btn-clear').addEventListener('click', () => {
   if (targetMarker) { map.removeLayer(targetMarker); targetMarker = null; }
