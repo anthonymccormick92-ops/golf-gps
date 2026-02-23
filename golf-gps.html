@@ -157,7 +157,7 @@
 <script>
 
 // ── API KEY — replace this with your key from golfcourseapi.com ──────────────
-const API_KEY = 'NL4XV5UUX7WX4VFDQMMJH2RVJE';
+const API_KEY = 'YOUR_API_KEY_HERE';
 
 // ── STATE ────────────────────────────────────────────────────────────────────
 let G = {
@@ -177,9 +177,9 @@ async function searchCourses(query) {
   resultsEl.innerHTML = '<div id="course-status">Searching…</div>';
 
   try {
-    const target = `https://api.golfcourseapi.com/v1/search?search_query=${encodeURIComponent(query)}`;
+    const target = `https://api.golfcourseapi.com/v1/search?search_query=${encodeURIComponent(query)}&key=${API_KEY}`;
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`;
-    const res = await fetch(proxyUrl, { headers: { 'Authorization': `Key ${API_KEY}` } });
+    const res = await fetch(proxyUrl);
     if (!res.ok) throw new Error('Network error ' + res.status);
     const wrapper = await res.json();
     const data = JSON.parse(wrapper.contents);
@@ -210,9 +210,9 @@ async function loadCourse(club) {
   toast('Loading ' + club.club_name + '…');
   try {
     const clubId = club.club_id || club.id;
-    const target = `https://api.golfcourseapi.com/v1/clubs/${clubId}`;
+    const target = `https://api.golfcourseapi.com/v1/clubs/${clubId}?key=${API_KEY}`;
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`;
-    const res = await fetch(proxyUrl, { headers: { 'Authorization': `Key ${API_KEY}` } });
+    const res = await fetch(proxyUrl);
     const wrapper = await res.json();
     const data = JSON.parse(wrapper.contents);
 
