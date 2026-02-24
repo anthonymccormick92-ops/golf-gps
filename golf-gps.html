@@ -390,10 +390,10 @@ async function searchCourse() {
   out.innerHTML = `<div class="search-state"><div class="spinner"></div><div class="label">Searching for "${query}"…</div></div>`;
 
   try {
-    const res = await fetch(WORKER_URL + '/course', {
+    const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ type: 'course', query })
     });
 
     if (!res.ok) throw new Error('Worker error ' + res.status);
@@ -745,7 +745,7 @@ async function sendMessage(text) {
     const res = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, context: getCaddyContext() })
+      body: JSON.stringify({ type: 'caddy', message: text, context: getCaddyContext() })
     });
     removeTyping();
     if (!res.ok) throw new Error('Worker ' + res.status);
