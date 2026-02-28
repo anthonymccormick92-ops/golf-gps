@@ -487,6 +487,9 @@ function startRound(course) {
   setHole(1);
   saveCurrentRound();
   saveRecent(course);
+  if (course.latitude && course.longitude) {
+    map.setView([course.latitude, course.longitude], 15);
+  }
   toast(course.name + ' — let\'s go!');
 }
 
